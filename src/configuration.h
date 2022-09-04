@@ -1,5 +1,5 @@
 #define EXECUTE_COMMUICATION true
-#define NO_HARDWARE true
+#define NO_HARDWARE false
 #define DEBUG_COMMUNICATION true
 #define SIMULATION true
 #define ANALYZE_INPUTS false
