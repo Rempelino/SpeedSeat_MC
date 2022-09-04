@@ -8,8 +8,8 @@
         {
             "name": "PlatformIO",
             "includePath": [
-                "c:/Users/Henry/Meine Ablage/3d Projekte/Station/V0h/include",
-                "c:/Users/Henry/Meine Ablage/3d Projekte/Station/V0h/src",
+                "c:/Projekte/SpeedSeat_MC/include",
+                "c:/Projekte/SpeedSeat_MC/src",
                 "C:/Users/Henry/.platformio/packages/framework-arduino-avr/cores/arduino",
                 "C:/Users/Henry/.platformio/packages/framework-arduino-avr/variants/mega",
                 "C:/Users/Henry/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
@@ -22,8 +22,8 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
-                    "c:/Users/Henry/Meine Ablage/3d Projekte/Station/V0h/include",
-                    "c:/Users/Henry/Meine Ablage/3d Projekte/Station/V0h/src",
+                    "c:/Projekte/SpeedSeat_MC/include",
+                    "c:/Projekte/SpeedSeat_MC/src",
                     "C:/Users/Henry/.platformio/packages/framework-arduino-avr/cores/arduino",
                     "C:/Users/Henry/.platformio/packages/framework-arduino-avr/variants/mega",
                     "C:/Users/Henry/.platformio/packages/framework-arduino-avr/libraries/EEPROM/src",
