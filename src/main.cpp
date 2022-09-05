@@ -12,14 +12,14 @@
 #include "communication.h"
 #include "beep.h"
 
-const unsigned int MaxPosTest = 260 * STEPS_PER_MM;
-
+communication com;
 void setup()
 {
   Serial.begin(250000);
+  com.initialize();
   while (DEBUG_COMMUNICATION)
   {
-    executeCommunication();
+    com.execute();
   }
   TimerInitialisieren();
   initializeAxis(X_Axis);
@@ -73,17 +73,16 @@ void loop()
 {
   if (EXECUTE_COMMUICATION)
   {
-    executeCommunication();
+    com.execute();
   }
 
   if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))
   {
-    if (newCommandPositionAvailable)
+    if (com.info.is_available)
     {
-      newCommandPositionAvailable = false;
-      move(0, newCommand.X_Position);
-      move(1, newCommand.Y_Position);
-      move(2, newCommand.Z_Position);
+      move(0, com.info.value_int_1);
+      move(1, com.info.value_int_2);
+      move(2, com.info.value_int_3);
     }
   }
   // if (!X_Axis.aktiv){

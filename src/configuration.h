@@ -9,6 +9,7 @@
 #define STEPS_PER_MM 40UL
 #define PIN_ENABLE 51
 #define PIN_BEEPER 53
+#define PROTOCOL_LENGTH 8
 
 //Default Values
 #define X_AXIS_HOMING_OFFSET 20
