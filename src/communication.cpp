@@ -1,7 +1,15 @@
 #include "communication.h"
 
-void communication::initialize()
+void communication::initialize(unsigned long int Steps_per_millimeter,
+                    unsigned long int Axis_1_max_position,
+                    unsigned long int Axis_2_max_position,
+                    unsigned long int Axis_3_max_position)
 {
+    axis_max_position_as_steps[0] = Axis_1_max_position * Steps_per_millimeter;
+    axis_max_position_as_steps[1] = Axis_2_max_position * Steps_per_millimeter;
+    axis_max_position_as_steps[2] = Axis_3_max_position * Steps_per_millimeter;
+    request_buffer[0] = IDLE;
+    request = IDLE;
 }
 
 void communication::execute()
@@ -138,10 +146,25 @@ void communication::readNewCommand()
         }
         else
         {
-            info.value_int_1 = buffer[1] * 256 + buffer[2];
-            info.value_int_2 = buffer[3] * 256 + buffer[4];
-            info.value_int_3 = buffer[5] * 256 + buffer[6];
-            info.value_bool = (bool)(buffer)[1];
+            info.value_as_int16[0] = buffer[1] * 256 + buffer[2];
+            info.value_as_int16[1] = buffer[3] * 256 + buffer[4];
+            info.value_as_int16[2] = buffer[5] * 256 + buffer[6];
+            info.value_bool[0] = (bool)(buffer)[1];
+            info.value_bool[1] = (bool)(buffer)[3];
+            info.value_bool[2] = (bool)(buffer)[5];
+            if (axis_max_position_as_steps[0] != 0){
+                info.value_scaled_to_max_axis_pos_as_steps[0] = info.value_as_int16[0] * axis_max_position_as_steps[0] / 65535;
+            }
+            if (axis_max_position_as_steps[1] != 0){
+                info.value_scaled_to_max_axis_pos_as_steps[1] = info.value_as_int16[1] * axis_max_position_as_steps[1] / 65535;
+            }
+            if (axis_max_position_as_steps[2] != 0){
+                info.value_scaled_to_max_axis_pos_as_steps[2] = info.value_as_int16[2] * axis_max_position_as_steps[2] / 65535;
+            }
+            info.value_as_steps[0] = info.value_as_int16[0] * steps_per_millimeter;
+            info.value_as_steps[1] = info.value_as_int16[1] * steps_per_millimeter;
+            info.value_as_steps[2] = info.value_as_int16[2] * steps_per_millimeter;
+
             info.command = command;
             info.is_available = true;
         }
@@ -201,4 +224,8 @@ void communication::setNextValue()
 
 void communication::get_value(CMD)
 {
+}
+
+void communication::set_steps_per_millimeter(unsigned long int Steps_per_millimeter){
+    steps_per_millimeter = Steps_per_millimeter;
 }
