@@ -80,7 +80,7 @@ void loop()
   {
     if (com.info.is_available)
     {
-      move(0, com.info.value_int_1);
+      move(0, com.unsignedLongToTwoBytes(com.info.));
       move(1, com.info.value_int_2);
       move(2, com.info.value_int_3);
     }
