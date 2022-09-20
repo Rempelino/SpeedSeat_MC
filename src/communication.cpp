@@ -85,23 +85,6 @@ void communication::acknowledge(ANSWER answer)
     }
 }
 
-unsigned long int communication::TwoBytesToSteps(byte Byte1, byte Byte2, unsigned long int maxPosition)
-{
-    unsigned long int ValueTwoBytes = Byte1;
-    ValueTwoBytes = ValueTwoBytes * 256;
-    ValueTwoBytes = ValueTwoBytes + Byte2;
-    if (maxPosition != 0)
-    {
-        ValueTwoBytes = ValueTwoBytes * (maxPosition - 1);
-        ValueTwoBytes = ValueTwoBytes / 65535;
-        if (ValueTwoBytes > maxPosition - 1)
-        {
-            ValueTwoBytes = maxPosition - 1;
-        }
-    }
-    return ValueTwoBytes;
-}
-
 bool communication::verifyData()
 {
     byte veryfyingResult = 0;
@@ -146,27 +129,27 @@ void communication::readNewCommand()
         }
         else
         {
-            info.value_as_int16[0] = buffer[1] * 256 + buffer[2];
-            info.value_as_int16[1] = buffer[3] * 256 + buffer[4];
-            info.value_as_int16[2] = buffer[5] * 256 + buffer[6];
-            info.value_bool[0] = (bool)(buffer)[1];
-            info.value_bool[1] = (bool)(buffer)[3];
-            info.value_bool[2] = (bool)(buffer)[5];
+            recived_value.as_int16[0] = buffer[1] * 256 + buffer[2];
+            recived_value.as_int16[1] = buffer[3] * 256 + buffer[4];
+            recived_value.as_int16[2] = buffer[5] * 256 + buffer[6];
+            recived_value.as_bool[0] = (bool)(buffer)[1];
+            recived_value.as_bool[1] = (bool)(buffer)[3];
+            recived_value.as_bool[2] = (bool)(buffer)[5];
             if (axis_max_position_as_steps[0] != 0){
-                info.value_scaled_to_max_axis_pos_as_steps[0] = info.value_as_int16[0] * axis_max_position_as_steps[0] / 65535;
+                recived_value.scaled_to_max_axis_pos_as_steps[0] = recived_value.as_int16[0] * axis_max_position_as_steps[0] / 65535;
             }
             if (axis_max_position_as_steps[1] != 0){
-                info.value_scaled_to_max_axis_pos_as_steps[1] = info.value_as_int16[1] * axis_max_position_as_steps[1] / 65535;
+                recived_value.scaled_to_max_axis_pos_as_steps[1] = recived_value.as_int16[1] * axis_max_position_as_steps[1] / 65535;
             }
             if (axis_max_position_as_steps[2] != 0){
-                info.value_scaled_to_max_axis_pos_as_steps[2] = info.value_as_int16[2] * axis_max_position_as_steps[2] / 65535;
+                recived_value.scaled_to_max_axis_pos_as_steps[2] = recived_value.as_int16[2] * axis_max_position_as_steps[2] / 65535;
             }
-            info.value_as_steps[0] = info.value_as_int16[0] * steps_per_millimeter;
-            info.value_as_steps[1] = info.value_as_int16[1] * steps_per_millimeter;
-            info.value_as_steps[2] = info.value_as_int16[2] * steps_per_millimeter;
+            recived_value.as_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
+            recived_value.as_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
+            recived_value.as_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
 
-            info.command = command;
-            info.is_available = true;
+            recived_value.command = command;
+            recived_value.is_available = true;
         }
         successfulExecuted = true;
         break;
@@ -224,8 +207,4 @@ void communication::setNextValue()
 
 void communication::get_value(CMD)
 {
-}
-
-void communication::set_steps_per_millimeter(unsigned long int Steps_per_millimeter){
-    steps_per_millimeter = Steps_per_millimeter;
 }

@@ -15,8 +15,8 @@
 communication com;
 void setup()
 {
-  Serial.begin(250000);
-  com.initialize();
+  Serial.begin(38400);
+  com.initialize(STEPS_PER_MM, X_AXIS_MAX_POSITION, Y_AXIS_MAX_POSITION, Z_AXIS_MAX_POSITION);
   while (DEBUG_COMMUNICATION)
   {
     com.execute();
@@ -78,11 +78,39 @@ void loop()
 
   if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))
   {
-    if (com.info.is_available)
+    if (com.recived_value.is_available)
     {
-      move(0, com.unsignedLongToTwoBytes(com.info.));
-      move(1, com.info.value_int_2);
-      move(2, com.info.value_int_3);
+      switch (com.recived_value.command)
+      {
+      case POSITION:
+        move(0, com.recived_value.scaled_to_max_axis_pos_as_steps[0]);
+        move(1, com.recived_value.scaled_to_max_axis_pos_as_steps[1]);
+        move(2, com.recived_value.scaled_to_max_axis_pos_as_steps[2]);
+        break;
+
+      case HOMING_OFFSET:
+        X_Axis.HomingOffset = com.recived_value.as_int16[0];
+        Y_Axis.HomingOffset = com.recived_value.as_int16[1];
+        Z_Axis.HomingOffset = com.recived_value.as_int16[2];
+        break;
+
+      case MAX_POSITION:
+        X_Axis.MaxPosition = com.recived_value.scaled_to_steps[0];
+        Y_Axis.MaxPosition = com.recived_value.scaled_to_steps[1];
+        Z_Axis.MaxPosition = com.recived_value.scaled_to_steps[2];
+        com.initialize(STEPS_PER_MM, com.recived_value.as_int16[0], com.recived_value.as_int16[1], com.recived_value.as_int16[2]);
+        break;
+
+      case ACCELLERATION:
+        X_Axis.acceleration = com.recived_value.scaled_to_steps[0];
+        Y_Axis.acceleration = com.recived_value.scaled_to_steps[1];
+        Z_Axis.acceleration = com.recived_value.scaled_to_steps[2];
+        break;
+
+      default:
+        break;
+      }
+      com.recived_value.is_available = false;
     }
   }
   // if (!X_Axis.aktiv){

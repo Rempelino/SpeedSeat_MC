@@ -5,9 +5,11 @@
 #ifndef PROTOCOL_LENGTH
 #define PROTOCOL_LENGTH 8
 #endif
+
 #ifndef TIMEOUT
 #define TIMEOUT 1000
 #endif
+
 #ifndef TIMEOUT_ACTIVE
 #define TIMEOUT_ACTIVE true
 #endif
@@ -20,6 +22,7 @@ enum CMD
     ACCELLERATION = 3,
     MAX_SPEED = 6,
     HOMING_STATUS = 7,
+
     IDLE = 9
 };
 
@@ -33,11 +36,11 @@ enum ANSWER
 struct AvailableInfos
 {
     bool is_available;
-    unsigned int value_as_int16[3];
-    bool value_bool[3];
-    unsigned long int value_scaled_to_max_axis_pos_as_steps[3];
-    unsigned long int value_scaled_to_steps[3];
-    unsigned long int value_as_steps[3];
+    unsigned int as_int16[3];
+    bool as_bool[3];
+    unsigned long int scaled_to_max_axis_pos_as_steps[3];
+    unsigned long int scaled_to_steps[3];
+    unsigned long int as_steps[3];
     CMD command;
 };
 
@@ -51,7 +54,6 @@ class communication
     CMD request;
     CMD request_buffer[100];
     void acknowledge(ANSWER);
-
     bool verifyData();
     void readNewCommand();
     void unsignedLongToTwoBytes(unsigned long int, unsigned long int, byte *, byte *);
@@ -65,12 +67,11 @@ public:
                     unsigned long int Axis_1_max_position,
                     unsigned long int Axis_2_max_position,
                     unsigned long int Axis_3_max_position);
-
-    void get_value(CMD);
-    void execute();
-    unsigned long int TwoBytesToSteps(byte, byte, unsigned long int);
-    AvailableInfos info;
-    CMD available_command;
-};
+        void get_value(CMD);
+        void execute();
+        unsigned long int TwoBytesToSteps(byte, byte, unsigned long int);
+        AvailableInfos recived_value;
+        CMD available_command;
+    };
 
 #endif
