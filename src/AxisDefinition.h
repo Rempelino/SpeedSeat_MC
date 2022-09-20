@@ -38,15 +38,17 @@
 
 #define Z_AXIS_INTERRUPT OCR5A
 #if PIN_Z_STEP == 2
-    #define Z_AXIS_PORT PORT_PIN_14
-    #define Z_AXIS_REGISTER REGISTER_PIN_14
-    #define Z_AXIS_BIT BIT_PIN_14
+    #define Z_AXIS_PORT PORT_PIN_2
+    #define Z_AXIS_REGISTER REGISTER_PIN_2
+    #define Z_AXIS_BIT BIT_PIN_2
 #else
     #error #error "Port, Register und Pinzuweisung konnte nicht gefunden werden. Weitere Infos unter https://docs.arduino.cc/static/ed4d33b86bac66d54959fbb186795a11/54c3a/PinMap2560big_Rev2.png "
 #endif
 
 
 
+#ifndef PINCONFIG
+#define PINCONFIG
 struct PinConfig{
     const int Direction;
     const int Enable;
@@ -54,11 +56,12 @@ struct PinConfig{
     const int InPosition;
     const int Endstop;
 };
+#endif
 
 struct Achse{
-    struct PinConfig Pin;
+    const struct PinConfig Pin;
     unsigned long int MaxPosition;
-    const unsigned long int acceleration;
+    unsigned long int acceleration;
     const unsigned long int accelerationPerAccelerationRecalculation;
     const unsigned long int maxSpeed;
     const unsigned long int DistanzAbbremsenVonMaxSpeed;
