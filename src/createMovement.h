@@ -121,8 +121,10 @@ void defaultMove(unsigned long int neuePosition)
     }
 }
 void move(unsigned short int AxisNomber, unsigned long int neuePosition)
-{
-    AxisL = getAxis(AxisNomber);
+{    AxisL = getAxis(AxisNomber);
+    if (AxisL->MaxPosition < neuePosition){
+        neuePosition = AxisL->MaxPosition;
+    }
     if (SIMULATION)
     {
         Serial.println("move() wird ausgeführt");

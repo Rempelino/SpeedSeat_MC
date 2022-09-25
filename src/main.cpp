@@ -32,18 +32,21 @@ void setup()
   delay(500);
   digitalWrite(PIN_BEEPER, LOW);
   delay(100);
-  while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE)
+  while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
   {
     doubleBeep();
   }
 
-  if (ANALYZE_INPUTS)
+  while (ANALYZE_INPUTS)
   {
-    while (true)
-    {
-      printInputStatus();
-      delay(1000);
-    }
+    printInputStatus();
+    delay(1000);
+  }
+
+  while (ANALYZE_AXIS)
+  {
+    dumpAxisParameter();
+    delay(1000);
   }
 
   while (digitalRead(PIN_ENABLE) & !NO_HARDWARE)
@@ -240,7 +243,8 @@ void loop()
   checkForKill();
   if (requestHome)
   {
-    home();
     requestHome = false;
+    home();
+    
   }
 }

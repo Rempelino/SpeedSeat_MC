@@ -177,7 +177,7 @@ struct Achse Y_Axis{    Pin : {
 
                         toggle: false,
                         stepPeriodInProcessorCycles: 65535,
-                        AxisNomber: 0
+                        AxisNomber: 1
                         };
 
 
@@ -220,7 +220,7 @@ struct Achse Z_Axis{    Pin : {
 
                         toggle: false,
                         stepPeriodInProcessorCycles: 65535,
-                        AxisNomber: 0
+                        AxisNomber: 2
                         };
 
 
