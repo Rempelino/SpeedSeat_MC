@@ -46,7 +46,8 @@ struct AvailableInfos
 
 class communication
 {
-    byte buffer[PROTOCOL_LENGTH];
+    //byte buffer[PROTOCOL_LENGTH];
+    unsigned short buffer[PROTOCOL_LENGTH];
     unsigned long int millis_at_sending_answer;
     unsigned long int steps_per_millimeter;
     unsigned long int axis_max_position_as_steps[3];

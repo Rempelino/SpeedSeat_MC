@@ -21,10 +21,10 @@ void home()
 
     bool homingAllerAchsenAbgeschlossen = false;
     int x = 0;
-    unsigned long int myMicros;
-    unsigned long int microsLastCycle = micros();
-    unsigned long int mycrosSinceLastExecute = 0;
-    const unsigned long int intervall = 20 * STEPS_PER_MM;
+    unsigned long myMicros;
+    unsigned long microsLastCycle = micros();
+    unsigned long mycrosSinceLastExecute = 0;
+    const unsigned long intervall = 20 * STEPS_PER_MM;
     bool alleAchsenHabenEnstopsVerlassen = false;
     while (!homingAllerAchsenAbgeschlossen)
     {

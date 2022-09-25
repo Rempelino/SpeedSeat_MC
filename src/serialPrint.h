@@ -1,10 +1,10 @@
-unsigned long int ZykluszeitInMicrosekunden;
-unsigned long int microsPreviousCycle;
-unsigned long int ZeitSeitLetztemSerialPrint;
+unsigned long ZykluszeitInMicrosekunden;
+unsigned long microsPreviousCycle;
+unsigned long ZeitSeitLetztemSerialPrint;
 bool blockSerialForOneCycleToMeasureCylcetime;
 
 void simulationPrint(){
-    unsigned long int myMicros = micros();
+    unsigned long myMicros = micros();
     ZykluszeitInMicrosekunden = myMicros - microsPreviousCycle;
     microsPreviousCycle = myMicros;
     ZeitSeitLetztemSerialPrint = ZeitSeitLetztemSerialPrint + ZykluszeitInMicrosekunden;

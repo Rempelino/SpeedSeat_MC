@@ -1,6 +1,6 @@
 struct Achse *AxisL;
 
-unsigned long int getStopPosition()
+unsigned long getStopPosition()
 {
     if (AxisL->currentDirection)
     {
@@ -12,9 +12,9 @@ unsigned long int getStopPosition()
     }
 }
 
-bool stoppositionLiegtHinterSollposition(unsigned long int neuePosition)
+bool stoppositionLiegtHinterSollposition(unsigned long neuePosition)
 {
-    unsigned long int stopPosition = getStopPosition();
+    unsigned long stopPosition = getStopPosition();
     if (AxisL->currentDirection)
     {
         return (stopPosition > neuePosition);
@@ -25,7 +25,7 @@ bool stoppositionLiegtHinterSollposition(unsigned long int neuePosition)
     }
 }
 
-enum movementType getMovementType(unsigned long int neuePosition)
+enum movementType getMovementType(unsigned long neuePosition)
 {
     if (AxisL->aktiv & ((AxisL->currentDirection & (AxisL->istPosition > neuePosition)) || (!AxisL->currentDirection & (AxisL->istPosition < neuePosition))))
     {
@@ -49,7 +49,7 @@ enum movementType getMovementType(unsigned long int neuePosition)
 }
 // defaultMove -> Bewegungsablauf von null oder in gleicher richtung wenn maximale geschwindigkeit erreicht wird. Der Motor wird gestartet und "posStartDeccelerating"
 // wird auf die Abbremsdistanz von Max Speed gesetzt
-void defaultMove(unsigned long int neuePosition)
+void defaultMove(unsigned long neuePosition)
 {
     if (SIMULATION)
     {
@@ -57,14 +57,14 @@ void defaultMove(unsigned long int neuePosition)
     }
     if (AxisL->istPosition != neuePosition)
     {
-        unsigned long int distanzAbbremsen = AxisL->DistanzAbbremsenVonMaxSpeed;
+        unsigned long distanzAbbremsen = AxisL->DistanzAbbremsenVonMaxSpeed;
         if (SIMULATION)
         {
             Serial.print("distanzAbbremsen ->");
             Serial.println(distanzAbbremsen / STEPS_PER_MM);
         }
         AxisL->currentDirection = neuePosition > AxisL->istPosition;
-        unsigned long int distanz;
+        unsigned long distanz;
         if (AxisL->currentDirection)
         {
             distanz = neuePosition - AxisL->istPosition;
@@ -120,11 +120,14 @@ void defaultMove(unsigned long int neuePosition)
         }
     }
 }
-void move(unsigned short int AxisNomber, unsigned long int neuePosition)
-{    AxisL = getAxis(AxisNomber);
-    if (AxisL->MaxPosition < neuePosition){
+void move(unsigned short int AxisNomber, unsigned long neuePosition)
+{
+    AxisL = getAxis(AxisNomber);
+    if (AxisL->MaxPosition < neuePosition)
+    {
         neuePosition = AxisL->MaxPosition;
     }
+
     if (SIMULATION)
     {
         Serial.println("move() wird ausgeführt");
@@ -136,7 +139,7 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
         Serial.println(AxisL->istPosition / STEPS_PER_MM);
     }
     // noInterrupts();
-    //stopAxis(AxisNomber);
+    // stopAxis(AxisNomber);
     AxisL->changeOfDirection = false;
     switch (getMovementType(neuePosition))
     {
@@ -153,11 +156,11 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
         {
             Serial.println("movementType: movementExtension");
         }
-        unsigned long int speedDifferenceToMaxSpeed = AxisL->maxSpeed - AxisL->currentSpeed;
-        unsigned long int dauerBeschleunigenBisMaxSpeedIn10Millis = speedDifferenceToMaxSpeed * 10000 / AxisL->acceleration;
-        unsigned long int distanzBeschleunigen = (speedDifferenceToMaxSpeed * speedDifferenceToMaxSpeed) / (2 * AxisL->acceleration) + (dauerBeschleunigenBisMaxSpeedIn10Millis * AxisL->currentSpeed / 10000);
-        unsigned long int distanzAbbremsen = (AxisL->maxSpeed * AxisL->maxSpeed) / (2 * AxisL->acceleration);
-        unsigned long int theoretischePositionBeimBeschleunigenAufMaxSpeed;
+        unsigned long speedDifferenceToMaxSpeed = AxisL->maxSpeed - AxisL->currentSpeed;
+        unsigned long dauerBeschleunigenBisMaxSpeedIn10Millis = speedDifferenceToMaxSpeed * 10000 / AxisL->acceleration;
+        unsigned long distanzBeschleunigen = (speedDifferenceToMaxSpeed * speedDifferenceToMaxSpeed) / (2 * AxisL->acceleration) + (dauerBeschleunigenBisMaxSpeedIn10Millis * AxisL->currentSpeed / 10000);
+        unsigned long distanzAbbremsen = (AxisL->maxSpeed * AxisL->maxSpeed) / (2 * AxisL->acceleration);
+        unsigned long theoretischePositionBeimBeschleunigenAufMaxSpeed;
 
         if (SIMULATION)
         {
@@ -235,8 +238,8 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
         }
         else
         {
-            unsigned long int Abbremsdistanz = (AxisL->currentSpeed * AxisL->currentSpeed) / (2 * AxisL->acceleration);
-            unsigned long int PositionBeimDirektenAbbremsen;
+            unsigned long Abbremsdistanz = (AxisL->currentSpeed * AxisL->currentSpeed) / (2 * AxisL->acceleration);
+            unsigned long PositionBeimDirektenAbbremsen;
 
             if (AxisL->currentDirection)
             {
@@ -252,7 +255,7 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
                 Serial.println(PositionBeimDirektenAbbremsen / STEPS_PER_MM);
             }
 
-            unsigned long int DifferenzZurSollPositionWennDirektAbgebremstWird;
+            unsigned long DifferenzZurSollPositionWennDirektAbgebremstWird;
             if (AxisL->currentDirection)
             {
                 DifferenzZurSollPositionWennDirektAbgebremstWird = neuePosition - PositionBeimDirektenAbbremsen;
@@ -262,7 +265,7 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
                 DifferenzZurSollPositionWennDirektAbgebremstWird = PositionBeimDirektenAbbremsen - neuePosition;
             }
 
-            unsigned long int HaelfteDerDifferenz = DifferenzZurSollPositionWennDirektAbgebremstWird / 2;
+            unsigned long HaelfteDerDifferenz = DifferenzZurSollPositionWennDirektAbgebremstWird / 2;
 
             if (AxisL->currentDirection)
             {
@@ -304,8 +307,8 @@ void move(unsigned short int AxisNomber, unsigned long int neuePosition)
         AxisL->changeOfDirection = true;
         AxisL->sollPositionNachRichtungswechsel = neuePosition;
 
-        //if (!AxisL -> aktiv){
-          //  startAxis(AxisNomber);
+        // if (!AxisL -> aktiv){
+        //   startAxis(AxisNomber);
         //}
 
         if (SIMULATION)
@@ -339,10 +342,12 @@ void makeCustomMove()
     {
         Serial.println("Hier beginnt der custom move -------------------------------------------------");
     }
-    
-    move(0,getSteps(100));
-    while(X_Axis.aktiv){}
-    move(0,0);
+
+    move(0, getSteps(100));
+    while (X_Axis.aktiv)
+    {
+    }
+    move(0, 0);
 
     if (SIMULATION)
     {

@@ -86,21 +86,16 @@ void loop()
       switch (com.recived_value.command)
       {
       case POSITION:
-       
         move(0, com.recived_value.scaled_to_max_axis_pos_as_steps[0]);
-        move(1, (unsigned long)(com.recived_value.scaled_to_max_axis_pos_as_steps[1]/10));
-        move(2, (unsigned long)(com.recived_value.as_int16[2]/10));
-        /*
-        move(0, com.recived_value.as_int16[0]/10);
-        move(1, com.recived_value.as_int16[1]/10);
-        move(2, com.recived_value.as_int16[2]/10);
-        */        
+        move(1, com.recived_value.scaled_to_max_axis_pos_as_steps[1]);
+        move(1, com.recived_value.scaled_to_max_axis_pos_as_steps[2]);
         break;
 
       case HOMING_OFFSET:
         X_Axis.HomingOffset = com.recived_value.as_int16[0];
         Y_Axis.HomingOffset = com.recived_value.as_int16[1];
         Z_Axis.HomingOffset = com.recived_value.as_int16[2];
+        requestHome = true;
         break;
 
       case MAX_POSITION:
@@ -251,6 +246,5 @@ void loop()
   {
     requestHome = false;
     home();
-    
-  }
+    }
 }

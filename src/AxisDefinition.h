@@ -60,11 +60,11 @@ struct PinConfig{
 
 struct Achse{
     const struct PinConfig Pin;
-    unsigned long int MaxPosition;
-    unsigned long int acceleration;
-    const unsigned long int accelerationPerAccelerationRecalculation;
-    const unsigned long int maxSpeed;
-    const unsigned long int DistanzAbbremsenVonMaxSpeed;
+    unsigned long MaxPosition;
+    unsigned long acceleration;
+    const unsigned long accelerationPerAccelerationRecalculation;
+    const unsigned long maxSpeed;
+    const unsigned long DistanzAbbremsenVonMaxSpeed;
     unsigned int HomingOffset;
 
     volatile bool aktiv;
@@ -73,17 +73,17 @@ struct Achse{
     bool homingAbgeschlossen;
     bool changeOfDirection;
     volatile bool runningMinSpeed;
-    unsigned long int currentSpeed;
+    unsigned long currentSpeed;
 
-    unsigned long int posStartDeccelerating;
-    unsigned long int sollPositionNachRichtungswechsel;
-    volatile unsigned long int istPosition;
-    unsigned long int sollPosition;
+    unsigned long posStartDeccelerating;
+    unsigned long sollPositionNachRichtungswechsel;
+    volatile unsigned long istPosition;
+    unsigned long sollPosition;
 
     bool currentDirection;
     const unsigned int RundungsFehlerProAccellerationCalculation;
     unsigned int RundungsfehlerSumiert;
-    unsigned long int CyclesSinceLastAccelerationCalculation;
+    unsigned long CyclesSinceLastAccelerationCalculation;
 
     volatile uint16_t *TimerPeriod;
     volatile uint8_t *Port;
@@ -103,7 +103,7 @@ struct Achse X_Axis{    Pin : {
                             InPosition: PIN_X_IN_POSITION,
                             Endstop: PIN_X_ENDSTOP},
 
-                        MaxPosition: (X_AXIS_MAX_POSITION - X_AXIS_HOMING_OFFSET) * STEPS_PER_MM,
+                        MaxPosition: X_AXIS_MAX_POSITION * STEPS_PER_MM,
                         acceleration: X_AXIS_ACCELLERATION * STEPS_PER_MM,
                         accelerationPerAccelerationRecalculation: X_Axis.acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000,
                         maxSpeed: X_AXIS_MAX_SPEED * STEPS_PER_MM,      //maxSpeed
@@ -145,7 +145,7 @@ struct Achse Y_Axis{    Pin : {
                             InPosition: PIN_Y_IN_POSITION,
                             Endstop: PIN_Y_ENDSTOP},
 
-                        MaxPosition: (Y_AXIS_MAX_POSITION - Y_AXIS_HOMING_OFFSET)* STEPS_PER_MM,
+                        MaxPosition: Y_AXIS_MAX_POSITION * STEPS_PER_MM,
                         acceleration: Y_AXIS_ACCELLERATION * STEPS_PER_MM,
                         accelerationPerAccelerationRecalculation: Y_Axis.acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000,
                         maxSpeed: Y_AXIS_MAX_SPEED * STEPS_PER_MM,      //maxSpeed
@@ -188,7 +188,7 @@ struct Achse Z_Axis{    Pin : {
                             InPosition: PIN_Z_IN_POSITION,
                             Endstop: PIN_Z_ENDSTOP},
 
-                        MaxPosition: (Z_AXIS_MAX_POSITION - Z_AXIS_HOMING_OFFSET)* STEPS_PER_MM,
+                        MaxPosition: Z_AXIS_MAX_POSITION * STEPS_PER_MM,
                         acceleration: Z_AXIS_ACCELLERATION * STEPS_PER_MM,
                         accelerationPerAccelerationRecalculation: Z_Axis.acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000,
                         maxSpeed: Z_AXIS_MAX_SPEED * STEPS_PER_MM,      //maxSpeed
