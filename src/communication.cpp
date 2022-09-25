@@ -1,9 +1,9 @@
 #include "communication.h"
 
 void communication::initialize(unsigned long int Steps_per_millimeter,
-                    unsigned long int Axis_1_max_position,
-                    unsigned long int Axis_2_max_position,
-                    unsigned long int Axis_3_max_position)
+                               unsigned long int Axis_1_max_position,
+                               unsigned long int Axis_2_max_position,
+                               unsigned long int Axis_3_max_position)
 {
     axis_max_position_as_steps[0] = Axis_1_max_position * Steps_per_millimeter;
     axis_max_position_as_steps[1] = Axis_2_max_position * Steps_per_millimeter;
@@ -122,7 +122,12 @@ void communication::readNewCommand()
     bool reading = (bool)(buffer[0] % 2);
     switch (command)
     {
-    case POSITION: case HOMING_OFFSET: case MAX_POSITION: case ACCELLERATION: case MAX_SPEED: case HOMING_STATUS:
+    case POSITION:
+    case HOMING_OFFSET:
+    case MAX_POSITION:
+    case ACCELLERATION:
+    case MAX_SPEED:
+    case HOMING_STATUS:
         if (reading)
         {
             request = command;
@@ -135,15 +140,11 @@ void communication::readNewCommand()
             recived_value.as_bool[0] = (bool)(buffer)[1];
             recived_value.as_bool[1] = (bool)(buffer)[3];
             recived_value.as_bool[2] = (bool)(buffer)[5];
-            if (axis_max_position_as_steps[0] != 0){
-                recived_value.scaled_to_max_axis_pos_as_steps[0] = recived_value.as_int16[0] * axis_max_position_as_steps[0] / 65535;
-            }
-            if (axis_max_position_as_steps[1] != 0){
-                recived_value.scaled_to_max_axis_pos_as_steps[1] = recived_value.as_int16[1] * axis_max_position_as_steps[1] / 65535;
-            }
-            if (axis_max_position_as_steps[2] != 0){
-                recived_value.scaled_to_max_axis_pos_as_steps[2] = recived_value.as_int16[2] * axis_max_position_as_steps[2] / 65535;
-            }
+            unsigned long int test = recived_value.as_int16[1];
+            recived_value.scaled_to_max_axis_pos_as_steps[0] = (unsigned long)(recived_value.as_int16[0]) * axis_max_position_as_steps[0] / 65535;
+            recived_value.scaled_to_max_axis_pos_as_steps[1] = (unsigned long)(recived_value.as_int16[1]) * axis_max_position_as_steps[1] / 65535;
+            recived_value.scaled_to_max_axis_pos_as_steps[2] = (unsigned long)(recived_value.as_int16[2]) * axis_max_position_as_steps[2] / 65535;
+            recived_value.scaled_to_max_axis_pos_as_steps[1] = test;
             recived_value.as_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
             recived_value.as_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
             recived_value.as_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;

@@ -38,7 +38,7 @@ struct AvailableInfos
     bool is_available;
     unsigned int as_int16[3];
     bool as_bool[3];
-    unsigned long int scaled_to_max_axis_pos_as_steps[3];
+    unsigned long scaled_to_max_axis_pos_as_steps[3];
     unsigned long int scaled_to_steps[3];
     unsigned long int as_steps[3];
     CMD command;

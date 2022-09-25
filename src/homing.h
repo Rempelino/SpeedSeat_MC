@@ -129,11 +129,16 @@ void home()
         }
         x = 0;
     }
-
-    unsigned long timeStamp = millis();
-    while (millis()-timeStamp<50){
-        if (digitalRead(X_Axis.Pin.Endstop) || digitalRead(Y_Axis.Pin.Endstop) || digitalRead(Z_Axis.Pin.Endstop)){
-            requestHome = true;
+    
+    if (PREVENT_BAD_HOMING)
+    {
+        unsigned long timeStamp = millis();
+        while (millis() - timeStamp < 50)
+        {
+            if (digitalRead(X_Axis.Pin.Endstop) || digitalRead(Y_Axis.Pin.Endstop) || digitalRead(Z_Axis.Pin.Endstop))
+            {
+                requestHome = true;
+            }
         }
     }
 
