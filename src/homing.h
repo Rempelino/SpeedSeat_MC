@@ -150,18 +150,6 @@ void home()
     while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
     {
         digitalWrite(PIN_BEEPER, HIGH);
-        if (executed_X){
-            executed_X = false;
-            Serial.println("X");
-        }
-        if (executed_Y){
-            executed_Y = false;
-            Serial.println("Y");
-        }
-        if (executed_Z){
-            executed_Z = false;
-            Serial.println("Z");
-        }
     }
     digitalWrite(PIN_BEEPER, LOW);
     X_Axis.istPosition = 0;

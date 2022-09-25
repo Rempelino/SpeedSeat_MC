@@ -11,9 +11,6 @@ unsigned long int millisLastCycle = false;
 bool stoppingToChangeDirection = false;
 bool killCalled = false;
 unsigned int ErrorNumber = 0;
-volatile bool executed_X = false;
-volatile bool executed_Y = false;
-volatile bool executed_Z = false;
 
 
 
