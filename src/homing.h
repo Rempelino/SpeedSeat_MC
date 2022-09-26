@@ -1,3 +1,6 @@
+bool digitalReadAverage(int pin);
+
+
 void home()
 {
     stopAxis(0);
@@ -46,7 +49,7 @@ void home()
                         microsLastCycle = micros();
                     }
                     Axis = getAxis(x);
-                    if (!digitalRead(Axis->Pin.Endstop))
+                    if (!digitalReadAverage(Axis->Pin.Endstop))
                     {
                         uint8_t AktuellerWertPort = *Axis->Port;
                         if (Axis->toggle)
@@ -62,7 +65,7 @@ void home()
                     }
                     x++;
                 }
-                if (digitalRead(X_Axis.Pin.Endstop) & digitalRead(Y_Axis.Pin.Endstop) & digitalRead(Z_Axis.Pin.Endstop))
+                if (digitalReadAverage(X_Axis.Pin.Endstop) & digitalReadAverage(Y_Axis.Pin.Endstop) & digitalReadAverage(Z_Axis.Pin.Endstop))
                 {
                     alleAchsenHabenEnstopsVerlassen = true;
                     digitalWrite(X_Axis.Pin.Direction, LOW);
@@ -86,7 +89,7 @@ void home()
                     Axis = getAxis(x);
 
                     x++;
-                    if (!digitalRead(Axis->Pin.Endstop) & !Axis->homingAbgeschlossen)
+                    if (!digitalReadAverage(Axis->Pin.Endstop) & !Axis->homingAbgeschlossen)
                     {
                         Axis->homingAbgeschlossen = true;
                         Axis->istPosition = 0;
@@ -129,23 +132,27 @@ void home()
         }
         x = 0;
     }
-    
+
     if (PREVENT_BAD_HOMING)
+    X_Axis.istPosition = getSteps(1);
+    Y_Axis.istPosition = getSteps(1);
+    Z_Axis.istPosition = getSteps(1);
+    while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
+    {
+    }
+    move(0,0);
+    move(1,0);
+    move(2,0);
     {
         unsigned long timeStamp = millis();
-        while (millis() - timeStamp < 50)
+        while (millis() - timeStamp < 30)
         {
-            if (digitalRead(X_Axis.Pin.Endstop) || digitalRead(Y_Axis.Pin.Endstop) || digitalRead(Z_Axis.Pin.Endstop))
+            if (digitalReadAverage(X_Axis.Pin.Endstop) || digitalReadAverage(Y_Axis.Pin.Endstop) || digitalReadAverage(Z_Axis.Pin.Endstop))
             {
                 requestHome = true;
             }
         }
     }
-
-    digitalWrite(PIN_BEEPER, HIGH);
-    delay(200);
-    digitalWrite(PIN_BEEPER, LOW);
-    delay(200);
 
     int distanz0PosiBisEndstop = 10; // mm
     move(0, getSteps(distanz0PosiBisEndstop));
@@ -154,7 +161,6 @@ void home()
 
     while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
     {
-        digitalWrite(PIN_BEEPER, HIGH);
     }
     digitalWrite(PIN_BEEPER, LOW);
     X_Axis.istPosition = 0;
@@ -165,5 +171,22 @@ void home()
     {
         Serial.println();
         Serial.println("Alle Achsen sind fertig gehomed. Der Hammer!!");
+    }
+}
+
+
+bool digitalReadAverage(int pin){
+    int averageingNumber = 10;
+    int y = 0;
+    int x = 0;
+    for (x = 0; x < averageingNumber; x++){
+        if (digitalRead(pin)){
+            y++;
+        }
+    }
+    if (y > averageingNumber / 2){
+        return true;
+    }else{
+        return false;
     }
 }

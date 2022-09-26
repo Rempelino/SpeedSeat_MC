@@ -88,7 +88,7 @@ void loop()
       case POSITION:
         move(0, com.recived_value.scaled_to_max_axis_pos_as_steps[0]);
         move(1, com.recived_value.scaled_to_max_axis_pos_as_steps[1]);
-        move(1, com.recived_value.scaled_to_max_axis_pos_as_steps[2]);
+        move(2, com.recived_value.scaled_to_max_axis_pos_as_steps[2]);
         break;
 
       case HOMING_OFFSET:
