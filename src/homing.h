@@ -1,6 +1,5 @@
 bool digitalReadAverage(int pin);
 
-
 void home()
 {
     stopAxis(0);
@@ -134,16 +133,16 @@ void home()
     }
 
     if (PREVENT_BAD_HOMING)
-    X_Axis.istPosition = getSteps(1);
-    Y_Axis.istPosition = getSteps(1);
-    Z_Axis.istPosition = getSteps(1);
-    while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
     {
-    }
-    move(0,0);
-    move(1,0);
-    move(2,0);
-    {
+        X_Axis.istPosition = getSteps(1);
+        Y_Axis.istPosition = getSteps(1);
+        Z_Axis.istPosition = getSteps(1);
+        while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
+        {
+        }
+        move(0, 0);
+        move(1, 0);
+        move(2, 0);
         unsigned long timeStamp = millis();
         while (millis() - timeStamp < 30)
         {
@@ -174,19 +173,24 @@ void home()
     }
 }
 
-
-bool digitalReadAverage(int pin){
+bool digitalReadAverage(int pin)
+{
     int averageingNumber = 10;
     int y = 0;
     int x = 0;
-    for (x = 0; x < averageingNumber; x++){
-        if (digitalRead(pin)){
+    for (x = 0; x < averageingNumber; x++)
+    {
+        if (digitalRead(pin))
+        {
             y++;
         }
     }
-    if (y > averageingNumber / 2){
+    if (y > averageingNumber / 2)
+    {
         return true;
-    }else{
+    }
+    else
+    {
         return false;
     }
 }
