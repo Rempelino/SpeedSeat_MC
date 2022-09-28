@@ -56,7 +56,7 @@ bool digitalReadAverage(int pin);
 void Axxis::home()
 {
 
-    // stopAxis();
+    stopAxis();
     homingAbgeschlossen = false;
     digitalWrite(Pin_Direction, HIGH);
 
@@ -139,7 +139,7 @@ void Axxis::home()
         while (aktiv)
         {
         }
-        // move(0, 0);
+        move(0);
         unsigned long timeStamp = millis();
         while (millis() - timeStamp < 30)
         {
@@ -150,9 +150,7 @@ void Axxis::home()
         }
     }
 
-    // move(0, getSteps(X_Axis.HomingOffset));
-    // move(1, getSteps(Y_Axis.HomingOffset));
-    // move(2, getSteps(Z_Axis.HomingOffset));
+    move(HomingOffset * stepsPerMillimeter);
 
     while (aktiv)
     {

@@ -1,4 +1,4 @@
-#define ABC
+//#define ABC
 
 #ifndef ABC
 int ErrorNumber;
