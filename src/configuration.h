@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #define EXECUTE_COMMUICATION true
 #define NO_HARDWARE false
 #define DEBUG_COMMUNICATION false
@@ -49,7 +52,7 @@
 
 
 
-
+#endif
 
 
 

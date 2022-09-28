@@ -2,7 +2,7 @@ unsigned long ZykluszeitInMicrosekunden;
 unsigned long microsPreviousCycle;
 unsigned long ZeitSeitLetztemSerialPrint;
 bool blockSerialForOneCycleToMeasureCylcetime;
-
+#ifdef ABC
 void simulationPrint(){
     unsigned long myMicros = micros();
     ZykluszeitInMicrosekunden = myMicros - microsPreviousCycle;
@@ -62,7 +62,6 @@ void printHomingParameter(struct Achse AxVariable){
   Serial.print("Endstop Pin: ");Serial.print(AxVariable.Pin.Endstop);Serial.print(" Aktuell: ");Serial.println(digitalRead(AxVariable.Pin.Endstop));
 }
 
-
 void dumpAxisParameter(){
   Serial.println();
   Serial.println();
@@ -109,10 +108,12 @@ void dumpAxisParameter(){
 }
 
 
+#endif
 void printInputStatus(){
   Serial.println();
   Serial.println();
   Serial.println("--------------------INPUTSTATUS-------------------------");
+  #ifdef ABC
   int x = 0;
   while (x < 3){
     Axis = getAxis(x);
@@ -138,6 +139,7 @@ void printInputStatus(){
 
     x++;
   }
+  #endif
   Serial.println();
   Serial.print("Enable: ");
   Serial.println(digitalRead(PIN_ENABLE));

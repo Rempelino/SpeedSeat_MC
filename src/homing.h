@@ -153,10 +153,9 @@ void home()
         }
     }
 
-    int distanz0PosiBisEndstop = 10; // mm
-    move(0, getSteps(distanz0PosiBisEndstop));
-    move(1, getSteps(distanz0PosiBisEndstop));
-    move(2, getSteps(distanz0PosiBisEndstop));
+    move(0, getSteps(X_Axis.HomingOffset));
+    move(1, getSteps(Y_Axis.HomingOffset));
+    move(2, getSteps(Z_Axis.HomingOffset));
 
     while (X_Axis.aktiv || Y_Axis.aktiv || Z_Axis.aktiv)
     {

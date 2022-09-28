@@ -1,22 +1,6 @@
 //Zuweisung der Outputregister
-#if PROCESSOR == ARDUINO_AVR_MEGA2560
-
-    #define PORT_PIN_2 PORTE
-    #define REGISTER_PIN_2 DDRE
-    #define BIT_PIN_2 PE4
-
-    #define PORT_PIN_14 PORTJ
-    #define REGISTER_PIN_14 DDRJ
-    #define BIT_PIN_14 PJ1
-
-    #define PORT_PIN_26 PORTA
-    #define REGISTER_PIN_26 DDRA
-    #define BIT_PIN_26 PA4
-#else
-    #error "Unbekannter Prozessor"
-#endif
-
-
+#include "configuration.h"
+#include "Arduino.h"
 
 #define X_AXIS_INTERRUPT OCR3A
 #if PIN_X_STEP == 26

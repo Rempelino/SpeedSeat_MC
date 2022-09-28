@@ -1,13 +1,13 @@
 #include "communication.h"
 
+
 void communication::initialize(unsigned long Steps_per_millimeter,
                                unsigned long Axis_1_max_position,
                                unsigned long Axis_2_max_position,
                                unsigned long Axis_3_max_position)
 {
-    axis_max_position_as_steps[0] = Axis_1_max_position * Steps_per_millimeter;
-    axis_max_position_as_steps[1] = Axis_2_max_position * Steps_per_millimeter;
-    axis_max_position_as_steps[2] = Axis_3_max_position * Steps_per_millimeter;
+    steps_per_millimeter = Steps_per_millimeter;
+    setMaxPosition(Axis_1_max_position, Axis_2_max_position, Axis_3_max_position);
     request_buffer[0] = IDLE;
     request = IDLE;
 }
@@ -172,7 +172,14 @@ void communication::readNewCommand()
     }
 }
 
-void unsignedLongToTwoBytes(unsigned long Value, unsigned long MaxValue, byte *Byte1, byte *Byte2)
+void communication::setMaxPosition(unsigned long X, unsigned long Y, unsigned long Z)
+{
+    axis_max_position_as_steps[0] = X * steps_per_millimeter;
+    axis_max_position_as_steps[1] = Y * steps_per_millimeter;
+    axis_max_position_as_steps[2] = Z * steps_per_millimeter;
+}
+
+void communication::unsignedLongToTwoBytes(unsigned long Value, unsigned long MaxValue, byte *Byte1, byte *Byte2)
 {
     double ValueScaled;
     if (MaxValue == 0)

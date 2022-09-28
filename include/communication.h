@@ -39,40 +39,40 @@ struct AvailableInfos
     unsigned int as_int16[3];
     bool as_bool[3];
     unsigned long scaled_to_max_axis_pos_as_steps[3];
-    unsigned long int scaled_to_steps[3];
-    unsigned long int as_steps[3];
+    unsigned long scaled_to_steps[3];
+    unsigned long as_steps[3];
     CMD command;
 };
 
 class communication
 {
-    //byte buffer[PROTOCOL_LENGTH];
+    // byte buffer[PROTOCOL_LENGTH];
     unsigned short buffer[PROTOCOL_LENGTH];
-    unsigned long int millis_at_sending_answer;
-    unsigned long int steps_per_millimeter;
-    unsigned long int axis_max_position_as_steps[3];
+    unsigned long millis_at_sending_answer;
+    unsigned long steps_per_millimeter;
+    unsigned long axis_max_position_as_steps[3];
     bool waiting_for_okay;
     CMD request;
     CMD request_buffer[100];
     void acknowledge(ANSWER);
     bool verifyData();
     void readNewCommand();
-    void unsignedLongToTwoBytes(unsigned long int, unsigned long int, byte *, byte *);
+    void unsignedLongToTwoBytes(unsigned long, unsigned long, byte *, byte *);
     void sendBuffer();
     void sendAnswer();
     void sendValueRequest();
     void setNextValue();
 
 public:
-    void initialize(unsigned long int Steps_per_millimeter,
-                    unsigned long int Axis_1_max_position,
-                    unsigned long int Axis_2_max_position,
-                    unsigned long int Axis_3_max_position);
-        void get_value(CMD);
-        void execute();
-        unsigned long int TwoBytesToSteps(byte, byte, unsigned long int);
-        AvailableInfos recived_value;
-        CMD available_command;
-    };
-
+    void initialize(unsigned long Steps_per_millimeter,
+                    unsigned long Axis_1_max_position,
+                    unsigned long Axis_2_max_position,
+                    unsigned long Axis_3_max_position);
+    void get_value(CMD);
+    void execute();
+    unsigned long TwoBytesToSteps(byte, byte, unsigned long);
+    AvailableInfos recived_value;
+    CMD available_command;
+    void setMaxPosition(unsigned long X, unsigned long Y, unsigned long Z);
+};
 #endif

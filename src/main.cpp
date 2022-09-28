@@ -1,3 +1,130 @@
+#define ABC
+
+#ifndef ABC
+int ErrorNumber;
+#include "Arduino.h"
+#include "configuration.h"
+#include "Axxis.h"
+#include "communication.h"
+#include "beep.h"
+#include "serialPrint.h"
+
+Axxis X_Axis(PIN_X_DIRECTION,
+             PIN_X_ENABLE,
+             PIN_X_TROUBLE,
+             PIN_X_IN_POSITION,
+             PIN_ENABLE,
+             PIN_X_ENDSTOP, BIT_PIN_26,
+             0,
+             X_AXIS_MAX_POSITION,
+             STEPS_PER_MM,
+             X_AXIS_ACCELLERATION,
+             X_AXIS_MAX_SPEED,
+             X_AXIS_HOMING_OFFSET,
+             &OCR3A,
+             &PORT_PIN_26,
+             &REGISTER_PIN_26);
+Axxis Y_Axis(PIN_Y_DIRECTION,
+             PIN_Y_ENABLE,
+             PIN_Y_TROUBLE,
+             PIN_Y_IN_POSITION,
+             PIN_ENABLE,
+             PIN_Y_ENDSTOP, BIT_PIN_14,
+             1,
+             Y_AXIS_MAX_POSITION,
+             STEPS_PER_MM,
+             Y_AXIS_ACCELLERATION,
+             Y_AXIS_MAX_SPEED,
+             Y_AXIS_HOMING_OFFSET,
+             &OCR4A,
+             &PORT_PIN_14,
+             &REGISTER_PIN_14);
+Axxis Z_Axis(PIN_Z_DIRECTION,
+             PIN_Z_ENABLE,
+             PIN_Z_TROUBLE,
+             PIN_Z_IN_POSITION,
+             PIN_ENABLE,
+             PIN_Z_ENDSTOP, BIT_PIN_2,
+             2,
+             Z_AXIS_MAX_POSITION,
+             STEPS_PER_MM,
+             Z_AXIS_ACCELLERATION,
+             Z_AXIS_MAX_SPEED,
+             Z_AXIS_HOMING_OFFSET,
+             &OCR5A,
+             &PORT_PIN_2,
+             &REGISTER_PIN_2);
+
+
+ISR(TIMER3_COMPA_vect){X_Axis.newStep();}
+ISR(TIMER4_COMPA_vect){X_Axis.newStep();}
+ISR(TIMER5_COMPA_vect){X_Axis.newStep();}
+
+
+communication com;
+
+void setup()
+{
+  Serial.begin(38400);
+  com.initialize(STEPS_PER_MM, X_AXIS_MAX_POSITION, Y_AXIS_MAX_POSITION, Z_AXIS_MAX_POSITION);
+  while (DEBUG_COMMUNICATION)
+  {
+    com.execute();
+  }
+  Serial.println(Z_Axis.getSomeValue());
+  pinMode(PIN_ENABLE, INPUT_PULLUP);
+  pinMode(PIN_BEEPER, OUTPUT);
+
+  digitalWrite(PIN_BEEPER, HIGH);
+  delay(500);
+  digitalWrite(PIN_BEEPER, LOW);
+  delay(100);
+  while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
+  {
+    doubleBeep();
+  }
+  
+  while (ANALYZE_INPUTS)
+  {
+    printInputStatus();
+    delay(1000);
+  }
+
+  while (ANALYZE_AXIS)
+  {
+    X_Axis.dumpAxisParameter();
+    Y_Axis.dumpAxisParameter();
+    Z_Axis.dumpAxisParameter();
+    delay(1000);
+  }
+  
+  while (digitalRead(PIN_ENABLE) & !NO_HARDWARE)
+  {
+    delay(100);
+  }
+
+  if (SIMULATION)
+  {
+    X_Axis.dumpAxisParameter();
+    Y_Axis.dumpAxisParameter();
+    Z_Axis.dumpAxisParameter();
+    printInputStatus();
+  }
+
+  if (!NO_HARDWARE)
+  {
+    X_Axis.home();
+    Y_Axis.home();
+    Z_Axis.home();
+  }
+}
+
+void loop()
+{
+}
+#endif
+
+#ifdef ABC
 #include "Arduino.h"
 #include "configuration.h"
 #include "Variablen.h"
@@ -102,7 +229,7 @@ void loop()
         X_Axis.MaxPosition = com.recived_value.scaled_to_steps[0];
         Y_Axis.MaxPosition = com.recived_value.scaled_to_steps[1];
         Z_Axis.MaxPosition = com.recived_value.scaled_to_steps[2];
-        com.initialize(STEPS_PER_MM, com.recived_value.as_int16[0], com.recived_value.as_int16[1], com.recived_value.as_int16[2]);
+        com.setMaxPosition(com.recived_value.as_int16[0], com.recived_value.as_int16[1], com.recived_value.as_int16[2]);
         break;
 
       case ACCELLERATION:
@@ -246,5 +373,7 @@ void loop()
   {
     requestHome = false;
     home();
-    }
+  }
 }
+
+#endif
