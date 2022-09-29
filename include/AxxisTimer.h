@@ -25,9 +25,14 @@ void Axxis::stopAxis(){
     TIMSK5 = TIMSK5 & ~(1 << OCIE1A);
     OCR5A = 65535;
   }
+  aktiv = false;
+  currentSpeed = 0;
 }
 
 void Axxis::startAxis(){
+  if(!locked){
+    return;
+  }
   if(SIMULATION){
     Serial.print("Axis: ");Serial.print(AxisNomber);Serial.println(" wird gestartet.");
   }

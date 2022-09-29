@@ -7,7 +7,12 @@
 #endif
 #include "Arduino.h"
 
-enum movementType{movementFromZero, movementWithChangeOfDirection, movementExtension};
+enum movementType
+{
+    movementFromZero,
+    movementWithChangeOfDirection,
+    movementExtension
+};
 
 class Axxis
 {
@@ -23,11 +28,9 @@ private:
     unsigned long accelerationPerAccelerationRecalculation;
     unsigned long maxSpeed;
     unsigned long DistanzAbbremsenVonMaxSpeed;
-    unsigned long MaxPosition;
     unsigned long acceleration;
     unsigned int HomingOffset;
 
-    volatile bool aktiv;
     bool accelerating;
     bool deccelerating;
     bool homingAbgeschlossen;
@@ -52,6 +55,9 @@ private:
     unsigned int stepPeriodInProcessorCycles = 65535;
     unsigned long stepsPerMillimeter;
     bool preventBadHoming = true;
+    bool killed;
+    unsigned int ErrorID;
+    bool locked = true;
 
     void TimerInitialisieren();
     unsigned long getStopPosition();
@@ -61,9 +67,11 @@ private:
     uint16_t getTimeTillNextStep();
     void recalculateAccelleration();
     bool digitalReadAverage(int);
-    
 
 public:
+    volatile bool aktiv;
+    unsigned long MaxPosition;
+
     Axxis(int pin_Direction,
           int Pin_Enable,
           int Pin_Trouble,
@@ -87,7 +95,14 @@ public:
     void stopAxis();
     void startAxis();
     void newStep();
+    bool hasError();
+    unsigned int getErrorID();
     int getSomeValue();
+    void lock();
+    void unlock();
+    bool isLocked();
+    void setHomingOffset(unsigned long offset);
+    void setAcceleration(unsigned long acceleration);
 };
 
 #endif

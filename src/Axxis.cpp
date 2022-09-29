@@ -30,16 +30,13 @@ Axxis::Axxis(int Pin_Direction,
 {
 
     this->MaxPosition = MaxPositionInMillimeter * StepsPerMillimeter;
-    this->acceleration = acceleration * StepsPerMillimeter;
-    this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
     this->maxSpeed = maxSpeed * StepsPerMillimeter;
-    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
     this->HomingOffset = HomingOffset;
     this->TimerPeriod = TimerPeriod;
     this->Port = Port;
     this->OutputRegister = OutputRegister;
     this->stepsPerMillimeter = StepsPerMillimeter;
-
+    setAcceleration(acceleration);
     TimerInitialisieren();
     pinMode(Pin_Direction, OUTPUT);
     pinMode(Pin_Enable, OUTPUT);
@@ -52,14 +49,41 @@ Axxis::Axxis(int Pin_Direction,
     uint8_t AktuellerWertPort = *OutputRegister;
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
 }
-bool digitalReadAverage(int pin);
+
+void Axxis::setAcceleration(unsigned long acceleration){
+    this->acceleration = acceleration * stepsPerMillimeter;
+    this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
+    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
+}
+
+void Axxis::lock()
+{
+    if (!locked)
+    {
+        digitalWrite(Pin_Enable, LOW);
+        homingAbgeschlossen = false;
+        killed = false;
+        ErrorID = 0;
+    }
+}
+
+void Axxis::unlock()
+{
+    stopAxis();
+    locked = true;
+    digitalWrite(Pin_Enable, HIGH);
+}
+
+bool Axxis::isLocked()
+{
+    return locked;
+}
+
 void Axxis::home()
 {
-
     stopAxis();
     homingAbgeschlossen = false;
     digitalWrite(Pin_Direction, HIGH);
-
     bool homingAbgeschlossen = false;
     unsigned long myMicros;
     unsigned long microsLastCycle = micros();
@@ -87,12 +111,12 @@ void Axxis::home()
                     uint8_t AktuellerWertPort = *Port;
                     if (toggle)
                     {
-                        *Port = AktuellerWertPort | (1 << StepPinNumber); // Axis->StepPinNumber;//*Axis->Port|(1<<Axis->StepPinNumber);
+                        *Port = AktuellerWertPort | (1 << StepPinNumber);
                         toggle = false;
                     }
                     else
                     {
-                        *Port = AktuellerWertPort & ~(1 << StepPinNumber); //*Axis->Port|~(0<<Axis->StepPinNumber);
+                        *Port = AktuellerWertPort & ~(1 << StepPinNumber);
                         toggle = true;
                     }
                 }
@@ -156,6 +180,11 @@ void Axxis::home()
     {
     }
     istPosition = 0;
+}
+
+void Axxis::setHomingOffset(unsigned long offset){
+    HomingOffset = offset;
+    home();
 }
 
 int Axxis::getSomeValue()
@@ -249,4 +278,51 @@ bool Axxis::digitalReadAverage(int pin)
     {
         return false;
     }
+}
+
+bool Axxis::hasError()
+{
+    unsigned long int timeStamp;
+    const unsigned long int timeTillError = 50;
+    if (killed)
+    {
+        return true;
+    }
+
+    if (homingAbgeschlossen & !digitalRead(Pin_Endstop))
+    {
+        timeStamp = millis();
+        while (!digitalRead(Pin_Endstop))
+        {
+            if (millis() - timeStamp >= timeTillError)
+            {
+                stopAxis();
+                killed = true;
+                ErrorID = 3;
+                return true;
+            }
+        }
+    }
+
+    if (!digitalRead(Pin_Trouble))
+    {
+        timeStamp = millis();
+        while (!digitalRead(Pin_Trouble))
+        {
+            if (millis() - timeStamp >= timeTillError)
+            {
+                stopAxis();
+                killed = true;
+                ErrorID = 4;
+                return true;
+                break;
+            }
+        }
+    }
+    return false;
+}
+
+unsigned int Axxis::getErrorID()
+{
+    return ErrorID;
 }

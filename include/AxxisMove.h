@@ -8,10 +8,9 @@
 
 void Axxis::move(unsigned long neuePosition)
 {
-    unsigned long newPosAsSteps = neuePosition * stepsPerMillimeter;
-    if (MaxPosition < newPosAsSteps)
+    if (MaxPosition < neuePosition)
     {
-        newPosAsSteps = MaxPosition;
+        neuePosition = MaxPosition;
     }
 
     if (SIMULATION)
@@ -19,20 +18,20 @@ void Axxis::move(unsigned long neuePosition)
         Serial.println("move() wird ausgeführt");
         Serial.print("Achse: ");
         Serial.println(AxisNomber);
-        Serial.print("newPosAsSteps: ");
-        Serial.println(newPosAsSteps / stepsPerMillimeter);
+        Serial.print("neuePosition: ");
+        Serial.println(neuePosition / stepsPerMillimeter);
         Serial.print("istPosition: ");
         Serial.println(istPosition / stepsPerMillimeter);
     }
     changeOfDirection = false;
-    switch (getMovementType(newPosAsSteps))
+    switch (getMovementType(neuePosition))
     {
     case movementFromZero:
         if (SIMULATION)
         {
             Serial.println("movementType: movementFromZero");
         }
-        defaultMove(newPosAsSteps);
+        defaultMove(neuePosition);
         break;
     case movementExtension:
     {
@@ -83,7 +82,7 @@ void Axxis::move(unsigned long neuePosition)
         bool esWirdAufMaxSpeedBeschleunigt;
         if (currentDirection)
         {
-            if (theoretischePositionBeimBeschleunigenAufMaxSpeed < newPosAsSteps)
+            if (theoretischePositionBeimBeschleunigenAufMaxSpeed < neuePosition)
             {
                 esWirdAufMaxSpeedBeschleunigt = true;
             }
@@ -94,7 +93,7 @@ void Axxis::move(unsigned long neuePosition)
         }
         else
         {
-            if (theoretischePositionBeimBeschleunigenAufMaxSpeed > newPosAsSteps)
+            if (theoretischePositionBeimBeschleunigenAufMaxSpeed > neuePosition)
             {
                 esWirdAufMaxSpeedBeschleunigt = true;
             }
@@ -118,7 +117,7 @@ void Axxis::move(unsigned long neuePosition)
 
         if (esWirdAufMaxSpeedBeschleunigt)
         {
-            defaultMove(newPosAsSteps);
+            defaultMove(neuePosition);
         }
         else
         {
@@ -142,22 +141,22 @@ void Axxis::move(unsigned long neuePosition)
             unsigned long DifferenzZurSollPositionWennDirektAbgebremstWird;
             if (currentDirection)
             {
-                DifferenzZurSollPositionWennDirektAbgebremstWird = newPosAsSteps - PositionBeimDirektenAbbremsen;
+                DifferenzZurSollPositionWennDirektAbgebremstWird = neuePosition - PositionBeimDirektenAbbremsen;
             }
             else
             {
-                DifferenzZurSollPositionWennDirektAbgebremstWird = PositionBeimDirektenAbbremsen - newPosAsSteps;
+                DifferenzZurSollPositionWennDirektAbgebremstWird = PositionBeimDirektenAbbremsen - neuePosition;
             }
 
             unsigned long HaelfteDerDifferenz = DifferenzZurSollPositionWennDirektAbgebremstWird / 2;
 
             if (currentDirection)
             {
-                posStartDeccelerating = newPosAsSteps - Abbremsdistanz - HaelfteDerDifferenz;
+                posStartDeccelerating = neuePosition - Abbremsdistanz - HaelfteDerDifferenz;
             }
             else
             {
-                posStartDeccelerating = newPosAsSteps + Abbremsdistanz + HaelfteDerDifferenz;
+                posStartDeccelerating = neuePosition + Abbremsdistanz + HaelfteDerDifferenz;
             }
             if (SIMULATION)
             {
@@ -168,7 +167,7 @@ void Axxis::move(unsigned long neuePosition)
             accelerating = true;
             deccelerating = false;
             CyclesSinceLastAccelerationCalculation = 0;
-            sollPosition = newPosAsSteps;
+            sollPosition = neuePosition;
             startAxis();
         }
 
@@ -189,7 +188,7 @@ void Axxis::move(unsigned long neuePosition)
         accelerating = false;
         deccelerating = true;
         changeOfDirection = true;
-        sollPositionNachRichtungswechsel = newPosAsSteps;
+        sollPositionNachRichtungswechsel = neuePosition;
 
         // if (!AxisL -> aktiv){
         //   startAxis(AxisNomber);
@@ -198,7 +197,7 @@ void Axxis::move(unsigned long neuePosition)
         if (SIMULATION)
         {
             Serial.print("sollPositionNachRichtungswechsel: ");
-            Serial.println(newPosAsSteps / stepsPerMillimeter);
+            Serial.println(neuePosition / stepsPerMillimeter);
         }
 
         break;
@@ -233,28 +232,28 @@ unsigned long Axxis::getStopPosition()
     }
 }
 
-bool Axxis::stoppositionLiegtHinterSollposition(unsigned long newPosAsSteps)
+bool Axxis::stoppositionLiegtHinterSollposition(unsigned long neuePosition)
 {
     unsigned long stopPosition = getStopPosition();
     if (currentDirection)
     {
-        return (stopPosition > newPosAsSteps);
+        return (stopPosition > neuePosition);
     }
     else
     {
-        return (stopPosition < newPosAsSteps);
+        return (stopPosition < neuePosition);
     }
 }
 
-enum movementType Axxis::getMovementType(unsigned long newPosAsSteps)
+enum movementType Axxis::getMovementType(unsigned long neuePosition)
 {
-    if (aktiv & ((currentDirection & (istPosition > newPosAsSteps)) || (!currentDirection & (istPosition < newPosAsSteps))))
+    if (aktiv & ((currentDirection & (istPosition > neuePosition)) || (!currentDirection & (istPosition < neuePosition))))
     {
         return movementWithChangeOfDirection;
     }
-    else if (aktiv & ((currentDirection & (istPosition < newPosAsSteps)) || (!currentDirection & (istPosition > newPosAsSteps))))
+    else if (aktiv & ((currentDirection & (istPosition < neuePosition)) || (!currentDirection & (istPosition > neuePosition))))
     {
-        if (stoppositionLiegtHinterSollposition(newPosAsSteps))
+        if (stoppositionLiegtHinterSollposition(neuePosition))
         {
             return movementWithChangeOfDirection;
         }
@@ -270,13 +269,13 @@ enum movementType Axxis::getMovementType(unsigned long newPosAsSteps)
 }
 // defaultMove -> Bewegungsablauf von null oder in gleicher richtung wenn maximale geschwindigkeit erreicht wird. Der Motor wird gestartet und "posStartDeccelerating"
 // wird auf die Abbremsdistanz von Max Speed gesetzt
-void Axxis::defaultMove(unsigned long newPosAsSteps)
+void Axxis::defaultMove(unsigned long neuePosition)
 {
     if (SIMULATION)
     {
         Serial.println("defaultMove() wird ausgeführt");
     }
-    if (istPosition != newPosAsSteps)
+    if (istPosition != neuePosition)
     {
         unsigned long distanzAbbremsen = DistanzAbbremsenVonMaxSpeed;
         if (SIMULATION)
@@ -284,15 +283,15 @@ void Axxis::defaultMove(unsigned long newPosAsSteps)
             Serial.print("distanzAbbremsen ->");
             Serial.println(distanzAbbremsen / stepsPerMillimeter);
         }
-        currentDirection = newPosAsSteps > istPosition;
+        currentDirection = neuePosition > istPosition;
         unsigned long distanz;
         if (currentDirection)
         {
-            distanz = newPosAsSteps - istPosition;
+            distanz = neuePosition - istPosition;
         }
         else
         {
-            distanz = istPosition - newPosAsSteps;
+            distanz = istPosition - neuePosition;
         }
         if (distanzAbbremsen > distanz / 2)
         {
@@ -306,11 +305,11 @@ void Axxis::defaultMove(unsigned long newPosAsSteps)
         }
         if (currentDirection)
         {
-            posStartDeccelerating = newPosAsSteps - distanzAbbremsen;
+            posStartDeccelerating = neuePosition - distanzAbbremsen;
         }
         else
         {
-            posStartDeccelerating = newPosAsSteps + distanzAbbremsen;
+            posStartDeccelerating = neuePosition + distanzAbbremsen;
         }
         digitalWrite(Pin_Direction, currentDirection);
         if (SIMULATION)
@@ -332,7 +331,7 @@ void Axxis::defaultMove(unsigned long newPosAsSteps)
         aktiv = true;
         //millisLastCycle = millis();
         CyclesSinceLastAccelerationCalculation = 0;
-        sollPosition = newPosAsSteps;
+        sollPosition = neuePosition;
         startAxis();
         if (SIMULATION)
         {
