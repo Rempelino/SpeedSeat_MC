@@ -4,10 +4,10 @@
 #ifndef CALCULATE_ACCELERATION_VIA_INTERRUPT
 #define CALCULATE_ACCELERATION_VIA_INTERRUPT false
 #endif
-#include "Axxis.h"
+#include "Axis.h"
 #include "Arduino.h"
 
-void Axxis::stopAxis()
+void Axis::stopAxis()
 {
   if (SIMULATION)
   {
@@ -36,7 +36,7 @@ void Axxis::stopAxis()
   currentSpeed = 0;
 }
 
-void Axxis::startAxis()
+void Axis::startAxis()
 {
   if (!locked)
   {
@@ -63,7 +63,7 @@ void Axxis::startAxis()
   }
 }
 
-void Axxis::TimerInitialisieren()
+void Axis::TimerInitialisieren()
 {
   // https://www.robotshop.com/community/forum/t/arduino-101-timers-and-interrupts/13072
   noInterrupts(); // disable all interrupts

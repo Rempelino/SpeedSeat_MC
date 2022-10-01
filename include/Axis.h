@@ -17,7 +17,7 @@ enum movementType
     movementExtension
 };
 
-class Axxis
+class Axis
 {
 private:
     const int Pin_Direction;
@@ -77,7 +77,7 @@ public:
     unsigned long MaxPosition;
     volatile unsigned long istPosition;
 
-    Axxis(int pin_Direction,
+    Axis(int pin_Direction,
           int Pin_Enable,
           int Pin_Trouble,
           int Pin_InPosition,

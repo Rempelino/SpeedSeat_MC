@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #include "configuration.h"
-#include "Axxis.h"
+#include "Axis.h"
 #include "communication.h"
 #include "Beeping.h"
 #include "AxisDefinition.h"

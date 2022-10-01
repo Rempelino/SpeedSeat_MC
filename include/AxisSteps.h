@@ -3,10 +3,10 @@
 #ifndef CALCULATE_ACCELERATION_VIA_INTERRUPT
 #define CALCULATE_ACCELERATION_VIA_INTERRUPT false
 #endif
-#include "Axxis.h"
+#include "Axis.h"
 const unsigned int speedAt65535ProzessorCyclesPerStep = 1000000 / (65535 / PROCESSOR_CYCLES_PER_MICROSECOND) + 1;
 
-void Axxis::newStep()
+void Axis::newStep()
 {
   // Den Pin HIGH oder LOW schalten
   
@@ -85,7 +85,7 @@ void Axxis::newStep()
   }
 }
 
-uint16_t Axxis::getTimeTillNextStep()
+uint16_t Axis::getTimeTillNextStep()
 {
   bool minSpeed = false;
   if (accelerating)
@@ -118,7 +118,7 @@ uint16_t Axxis::getTimeTillNextStep()
   return 1000000 / currentSpeed * 16;
 }
 
-void Axxis::recalculateAccelleration()
+void Axis::recalculateAccelleration()
 {
   if (aktiv)
   {

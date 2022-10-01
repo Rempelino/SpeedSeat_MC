@@ -1,9 +1,9 @@
-#include "Axxis.h"
-#include "AxxisMove.h"
-#include "AxxisTimer.h"
-#include "AxxisSteps.h"
+#include "Axis.h"
+#include "AxisMove.h"
+#include "AxisTimer.h"
+#include "AxisSteps.h"
 
-Axxis::Axxis(int Pin_Direction,
+Axis::Axis(int Pin_Direction,
              int Pin_Enable,
              int Pin_Trouble,
              int Pin_InPosition,
@@ -49,14 +49,14 @@ Axxis::Axxis(int Pin_Direction,
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
 }
 
-void Axxis::setAcceleration(unsigned long acceleration)
+void Axis::setAcceleration(unsigned long acceleration)
 {
     this->acceleration = acceleration * stepsPerMillimeter;
     this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
 }
 
-void Axxis::lock()
+void Axis::lock()
 {
     if (!locked)
     {
@@ -69,19 +69,19 @@ void Axxis::lock()
     }
 }
 
-void Axxis::unlock()
+void Axis::unlock()
 {
     stopAxis();
     locked = false;
     digitalWrite(Pin_Enable, HIGH);
 }
 
-bool Axxis::isLocked()
+bool Axis::isLocked()
 {
     return locked;
 }
 
-void Axxis::home()
+void Axis::home()
 {
     homingAbgeschlossen = false;
     if (SIMULATION)
@@ -197,18 +197,18 @@ void Axxis::home()
     homingAbgeschlossen = true;
 }
 
-void Axxis::setHomingOffset(unsigned long offset)
+void Axis::setHomingOffset(unsigned long offset)
 {
     HomingOffset = offset;
     home();
 }
 
-int Axxis::getSomeValue()
+int Axis::getSomeValue()
 {
     return currentDirection;
 }
 
-void Axxis::printInputStatus()
+void Axis::printInputStatus()
 {
     Serial.println();
     if (AxisNomber == 0)
@@ -234,7 +234,7 @@ void Axxis::printInputStatus()
     Serial.println(digitalRead(Pin_Trouble));
 }
 
-void Axxis::dumpAxisParameter()
+void Axis::dumpAxisParameter()
 {
     Serial.println();
 
@@ -274,7 +274,7 @@ void Axxis::dumpAxisParameter()
     Serial.println();
 }
 
-void Axxis::printStatus(){
+void Axis::printStatus(){
     Serial.println();
 
     if (AxisNomber == 0)
@@ -316,7 +316,7 @@ void Axxis::printStatus(){
     Serial.println();
 }
 
-bool Axxis::digitalReadAverage(int pin)
+bool Axis::digitalReadAverage(int pin)
 {
     int averageingNumber = 10;
     int y = 0;
@@ -338,7 +338,7 @@ bool Axxis::digitalReadAverage(int pin)
     }
 }
 
-bool Axxis::hasError()
+bool Axis::hasError()
 {
     unsigned long int timeStamp;
     const unsigned long int timeTillError = 50;
@@ -380,7 +380,7 @@ bool Axxis::hasError()
     return false;
 }
 
-unsigned int Axxis::getErrorID()
+unsigned int Axis::getErrorID()
 {
     return ErrorID;
 }
