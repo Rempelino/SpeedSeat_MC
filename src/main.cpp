@@ -60,9 +60,9 @@ void setup()
 
   if (!NO_HARDWARE)
   {
+    Z_Axis.home();
     X_Axis.home();
     Y_Axis.home();
-    Z_Axis.home();
   }
 }
 //--------------------------------------LOOP-------------------------------------------------
