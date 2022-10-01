@@ -1,26 +1,15 @@
 #ifndef AXISSTEPS_H
 #define AXISSTEPS_H
-#ifndef CALCULATE_ACCELERATION_VIA_INTERRUPT
-#define CALCULATE_ACCELERATION_VIA_INTERRUPT false
-#endif
 #include "Axis.h"
 const unsigned int speedAt65535ProzessorCyclesPerStep = 1000000 / (65535 / PROCESSOR_CYCLES_PER_MICROSECOND) + 1;
 
 void Axis::newStep()
 {
-  // Den Pin HIGH oder LOW schalten
-  
-  if (!CALCULATE_ACCELERATION_VIA_INTERRUPT)
+  if (!currentDirection & istPosition == 0)
   {
-    CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation + stepPeriodInProcessorCycles;
-    while (CyclesSinceLastAccelerationCalculation >= ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES)
-    {
-      CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation - ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES;
-      stepPeriodInProcessorCycles = getTimeTillNextStep();
-      *TimerPeriod = stepPeriodInProcessorCycles;  
-    }
+    stopAxis();
+    return;
   }
-  
 
   uint8_t AktuellerWertPort = *Port;
   if (toggle)
@@ -34,27 +23,18 @@ void Axis::newStep()
     toggle = true;
   }
 
-  if (istPosition == sollPosition){
+  if (istPosition == sollPosition)
+  {
     stopAxis();
   }
-  
-  // Die enstprechende Position High oder Low schalten
+
   if (currentDirection)
   {
     istPosition++;
   }
   else
   {
-    if (istPosition == 0)
-    {
-      stopAxis();
-      killed = true;
-      ErrorID = 1;
-    }
-    else
-    {
-      istPosition--;
-    }
+    istPosition--;
   }
 
   if (istPosition == MaxPosition + 1)
@@ -69,7 +49,11 @@ void Axis::newStep()
     deccelerating = true;
     accelerating = false;
   }
-  if ((istPosition == sollPosition) || (runningMinSpeed & changeOfDirection) || (runningMinSpeed & deccelerating) || (istPosition == MaxPosition) || (istPosition == 0))
+  if ((istPosition == sollPosition) ||
+      (runningMinSpeed & changeOfDirection) ||
+      (runningMinSpeed & deccelerating) ||
+      (istPosition == MaxPosition) ||
+      (istPosition == 0))
   {
     deccelerating = false;
     accelerating = false;
@@ -116,15 +100,6 @@ uint16_t Axis::getTimeTillNextStep()
   }
   runningMinSpeed = minSpeed;
   return 1000000 / currentSpeed * 16;
-}
-
-void Axis::recalculateAccelleration()
-{
-  if (aktiv)
-  {
-    stepPeriodInProcessorCycles = getTimeTillNextStep();
-    *TimerPeriod = stepPeriodInProcessorCycles;
-  }
 }
 
 #endif
