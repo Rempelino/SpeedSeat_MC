@@ -9,6 +9,7 @@ const unsigned int speedAt65535ProzessorCyclesPerStep = 1000000 / (65535 / PROCE
 void Axxis::newStep()
 {
   // Den Pin HIGH oder LOW schalten
+  
   if (!CALCULATE_ACCELERATION_VIA_INTERRUPT)
   {
     CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation + stepPeriodInProcessorCycles;
@@ -16,9 +17,11 @@ void Axxis::newStep()
     {
       CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation - ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES;
       stepPeriodInProcessorCycles = getTimeTillNextStep();
-      *TimerPeriod = stepPeriodInProcessorCycles;
+      *TimerPeriod = stepPeriodInProcessorCycles;  
     }
   }
+  
+
   uint8_t AktuellerWertPort = *Port;
   if (toggle)
   {
@@ -31,6 +34,10 @@ void Axxis::newStep()
     toggle = true;
   }
 
+  if (istPosition == sollPosition){
+    stopAxis();
+  }
+  
   // Die enstprechende Position High oder Low schalten
   if (currentDirection)
   {

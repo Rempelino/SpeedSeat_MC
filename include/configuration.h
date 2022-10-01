@@ -14,7 +14,7 @@
 #define PIN_ENABLE 51
 #define PIN_BEEPER 53
 #define PROTOCOL_LENGTH 8
-#define ALLOW_MOVEMENT_AFTER_BOOTUP false
+#define ALLOW_MOVEMENT_AFTER_BOOTUP true
 #define PREVENT_BAD_HOMING true
 
 //Default Values

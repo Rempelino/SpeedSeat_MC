@@ -37,7 +37,6 @@ Axxis::Axxis(int Pin_Direction,
     this->OutputRegister = OutputRegister;
     this->stepsPerMillimeter = StepsPerMillimeter;
     setAcceleration(acceleration);
-    TimerInitialisieren();
     pinMode(Pin_Direction, OUTPUT);
     pinMode(Pin_Enable, OUTPUT);
     pinMode(Pin_InPosition, INPUT_PULLUP);
@@ -50,7 +49,8 @@ Axxis::Axxis(int Pin_Direction,
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
 }
 
-void Axxis::setAcceleration(unsigned long acceleration){
+void Axxis::setAcceleration(unsigned long acceleration)
+{
     this->acceleration = acceleration * stepsPerMillimeter;
     this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
@@ -61,16 +61,18 @@ void Axxis::lock()
     if (!locked)
     {
         digitalWrite(Pin_Enable, LOW);
+        locked = true;
         homingAbgeschlossen = false;
         killed = false;
         ErrorID = 0;
+        home();
     }
 }
 
 void Axxis::unlock()
 {
     stopAxis();
-    locked = true;
+    locked = false;
     digitalWrite(Pin_Enable, HIGH);
 }
 
@@ -81,10 +83,14 @@ bool Axxis::isLocked()
 
 void Axxis::home()
 {
-    stopAxis();
     homingAbgeschlossen = false;
+    if (SIMULATION)
+    {
+        Serial.print("Homing Axis: ");
+        Serial.println(AxisNomber);
+    }
+    stopAxis();
     digitalWrite(Pin_Direction, HIGH);
-    bool homingAbgeschlossen = false;
     unsigned long myMicros;
     unsigned long microsLastCycle = micros();
     unsigned long mycrosSinceLastExecute = 0;
@@ -97,6 +103,7 @@ void Axxis::home()
         microsLastCycle = myMicros;
         if (mycrosSinceLastExecute > intervall)
         {
+
             mycrosSinceLastExecute = mycrosSinceLastExecute - intervall;
 
             if (!AchseHatEndstopVerlassen)
@@ -105,9 +112,15 @@ void Axxis::home()
                 while (digitalRead(Pin_Permission))
                 {
                     microsLastCycle = micros();
+                    if (SIMULATION)
+                    {
+                        Serial.print("warte auf enable Pin: ");
+                        Serial.println(Pin_Permission);
+                    }
                 }
                 if (!digitalReadAverage(Pin_Endstop))
                 {
+
                     uint8_t AktuellerWertPort = *Port;
                     if (toggle)
                     {
@@ -169,7 +182,7 @@ void Axxis::home()
         {
             if (digitalReadAverage(Pin_Endstop))
             {
-                // requestHome = true;
+                return;
             }
         }
     }
@@ -177,12 +190,15 @@ void Axxis::home()
     move(HomingOffset * stepsPerMillimeter);
 
     while (aktiv)
-    {
+    { 
     }
+
     istPosition = 0;
+    homingAbgeschlossen = true;
 }
 
-void Axxis::setHomingOffset(unsigned long offset){
+void Axxis::setHomingOffset(unsigned long offset)
+{
     HomingOffset = offset;
     home();
 }
@@ -253,6 +269,48 @@ void Axxis::dumpAxisParameter()
 
     Serial.print("MaxPosition: ");
     Serial.println(MaxPosition / stepsPerMillimeter);
+
+    Serial.println();
+    Serial.println();
+}
+
+void Axxis::printStatus(){
+    Serial.println();
+
+    if (AxisNomber == 0)
+    {
+        Serial.println("Status of X Axis:");
+    }
+    if (AxisNomber == 1)
+    {
+        Serial.println("Status of Y Axis:");
+    }
+    if (AxisNomber == 2)
+    {
+        Serial.println("Status of Z Axis:");
+    }
+
+    Serial.println("Unit -> Steps ---------------------------------");
+
+    Serial.print("Istposition: ");
+    Serial.println(istPosition);
+
+    Serial.print("Sollposition: ");
+    Serial.println(sollPosition);
+
+    Serial.print("Speed: ");
+    Serial.println(currentSpeed);
+
+    Serial.println("Unit -> Millimeter ----------------------------");
+
+    Serial.print("Istposition: ");
+    Serial.println(istPosition/stepsPerMillimeter);
+
+    Serial.print("Sollposition: ");
+    Serial.println(sollPosition/stepsPerMillimeter);
+
+    Serial.print("Speed: ");
+    Serial.println(currentSpeed/stepsPerMillimeter);
 
     Serial.println();
     Serial.println();

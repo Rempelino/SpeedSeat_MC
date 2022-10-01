@@ -18,6 +18,7 @@ public:
     Beeping(int Pin, int Intervall, int Pause);
     void beep(int amountOfBeeps);
     void doubleBeep();
+    void kill();
     bool beepingActive;
 };
 
@@ -59,7 +60,8 @@ void Beeping::beep(int amountOfBeeps)
         return;
     }
     if (millis() - timeStamp > (beepingIntervall / 2))
-    {
+    {   
+        timeStamp = millis();
         if (beeperOn)
         {
             digitalWrite(Pin, LOW);
@@ -80,14 +82,24 @@ void Beeping::beep(int amountOfBeeps)
     }
 }
 
-void Beeping::doubleBeep(){
-    digitalWrite(PIN_BEEPER,HIGH);
+void Beeping::kill()
+{
+    digitalWrite(Pin, LOW);
+    beeperOn = false;
+    beepsLeft = 0;
+    beepingActive = false;
+    pauseActive = false;
+}
+
+void Beeping::doubleBeep()
+{
+    digitalWrite(PIN_BEEPER, HIGH);
     delay(100);
-    digitalWrite(PIN_BEEPER,LOW);
+    digitalWrite(PIN_BEEPER, LOW);
     delay(100);
-    digitalWrite(PIN_BEEPER,HIGH);
+    digitalWrite(PIN_BEEPER, HIGH);
     delay(100);
-    digitalWrite(PIN_BEEPER,LOW);
+    digitalWrite(PIN_BEEPER, LOW);
     delay(1000);
 }
 

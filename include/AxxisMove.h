@@ -8,6 +8,10 @@
 
 void Axxis::move(unsigned long neuePosition)
 {
+    if(!timerHasBeenInitialized){
+        TimerInitialisieren();
+        timerHasBeenInitialized = true;
+    }
     if (MaxPosition < neuePosition)
     {
         neuePosition = MaxPosition;
@@ -15,7 +19,9 @@ void Axxis::move(unsigned long neuePosition)
 
     if (SIMULATION)
     {
-        Serial.println("move() wird ausgeführt");
+        Serial.println();
+        Serial.println();
+        Serial.println("move() wird ausgeführt-------------------------------------------------");
         Serial.print("Achse: ");
         Serial.println(AxisNomber);
         Serial.print("neuePosition: ");

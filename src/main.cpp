@@ -7,6 +7,7 @@
 
 communication com;
 Beeping beep(PIN_BEEPER, 400, 1000);
+int AxisInBearbeitung;
 
 void setup()
 {
@@ -16,7 +17,7 @@ void setup()
   {
     com.execute();
   }
-  Serial.println(Z_Axis.getSomeValue());
+
   pinMode(PIN_ENABLE, INPUT_PULLUP);
   pinMode(PIN_BEEPER, OUTPUT);
 
@@ -110,7 +111,6 @@ void loop()
     }
   }
 
-
   if (X_Axis.hasError() || Y_Axis.hasError() || Z_Axis.hasError())
   {
     X_Axis.unlock();
@@ -118,15 +118,117 @@ void loop()
     Z_Axis.unlock();
     while (!digitalRead(PIN_ENABLE))
     {
-      beep.beep(X_Axis.getErrorID());
-      beep.beep(Y_Axis.getErrorID() + 10);
-      beep.beep(Z_Axis.getErrorID() + 20);
+      if (X_Axis.hasError())
+      {
+        beep.beep(X_Axis.getErrorID());
+      }
+      if (Y_Axis.hasError())
+      {
+        beep.beep(Y_Axis.getErrorID() + 10);
+      }
+      if (Z_Axis.hasError())
+      {
+        beep.beep(Z_Axis.getErrorID() + 20);
+      }
     }
+    beep.kill();
     while (digitalRead(PIN_ENABLE))
     {
     }
     X_Axis.lock();
     Y_Axis.lock();
     Z_Axis.lock();
+  }
+
+  while (digitalRead(PIN_ENABLE)){
+    X_Axis.stopAxis();
+    Y_Axis.stopAxis();
+    Z_Axis.stopAxis();
+  }
+  if (SIMULATION)
+  {
+    if (Serial.available() != 0)
+    {
+      X_Axis.printStatus();
+
+      int t = Serial.read();
+      Serial.println(t);
+      if (t == 49)
+      {
+        AxisInBearbeitung = 0;
+      } // 1
+      if (t == 50)
+      {
+        AxisInBearbeitung = 1;
+      } // 2
+      if (t == 51)
+      {
+        AxisInBearbeitung = 2;
+      } // 3
+      if (t == 52)
+      {
+        if (AxisInBearbeitung == 0)
+        {
+          X_Axis.move(X_Axis.MaxPosition);
+        }
+        if (AxisInBearbeitung == 1)
+        {
+          Y_Axis.move(Y_Axis.MaxPosition);
+        }
+        if (AxisInBearbeitung == 2)
+        {
+          Z_Axis.move(Z_Axis.MaxPosition);
+        }
+      } // 4
+      if (t == 53)
+      {
+        if (AxisInBearbeitung == 0)
+        {
+          X_Axis.move(0);
+        }
+        if (AxisInBearbeitung == 1)
+        {
+          Y_Axis.move(0);
+        }
+        if (AxisInBearbeitung == 2)
+        {
+          Z_Axis.move(0);
+        }
+      } // 5
+      if (t == 54)
+      {
+        // makeCustomMove();
+      } // 6
+      if (t == 43)
+      {
+        if (AxisInBearbeitung == 0)
+        {
+          X_Axis.move(X_Axis.istPosition + 10 * STEPS_PER_MM);
+        }
+        if (AxisInBearbeitung == 1)
+        {
+          Y_Axis.move(Y_Axis.istPosition + 10 * STEPS_PER_MM);
+        }
+        if (AxisInBearbeitung == 2)
+        {
+          Z_Axis.move(Z_Axis.istPosition + 10 * STEPS_PER_MM);
+        }
+      }
+      if (t == 45)
+      {
+        if (AxisInBearbeitung == 0)
+        {
+          X_Axis.move(X_Axis.istPosition - 10 * STEPS_PER_MM);
+        }
+        if (AxisInBearbeitung == 1)
+        {
+          Y_Axis.move(Y_Axis.istPosition - 10 * STEPS_PER_MM);
+        }
+        if (AxisInBearbeitung == 2)
+        {
+          Z_Axis.move(Z_Axis.istPosition - 10 * STEPS_PER_MM);
+        }
+      }
+    }
   }
 }

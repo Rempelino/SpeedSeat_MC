@@ -5,6 +5,9 @@
 #define ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS 4UL
 #define ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES (ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS * 1000UL * PROCESSOR_CYCLES_PER_MICROSECOND)
 #endif
+#ifndef SIMULATION
+#define SIMULATION false
+#endif
 #include "Arduino.h"
 
 enum movementType
@@ -35,12 +38,12 @@ private:
     bool deccelerating;
     bool homingAbgeschlossen;
     bool changeOfDirection;
+    bool timerHasBeenInitialized;
     volatile bool runningMinSpeed;
     unsigned long currentSpeed;
 
     unsigned long posStartDeccelerating;
     unsigned long sollPositionNachRichtungswechsel;
-    volatile unsigned long istPosition;
     unsigned long sollPosition;
 
     bool currentDirection = true;
@@ -54,12 +57,12 @@ private:
     bool toggle;
     unsigned int stepPeriodInProcessorCycles = 65535;
     unsigned long stepsPerMillimeter;
-    bool preventBadHoming = true;
+    bool preventBadHoming = false;
     bool killed;
     unsigned int ErrorID;
     bool locked = true;
 
-    void TimerInitialisieren();
+    
     unsigned long getStopPosition();
     bool stoppositionLiegtHinterSollposition(unsigned long);
     enum movementType getMovementType(unsigned long);
@@ -67,10 +70,12 @@ private:
     uint16_t getTimeTillNextStep();
     void recalculateAccelleration();
     bool digitalReadAverage(int);
+    void TimerInitialisieren();
 
 public:
     volatile bool aktiv;
     unsigned long MaxPosition;
+    volatile unsigned long istPosition;
 
     Axxis(int pin_Direction,
           int Pin_Enable,
@@ -88,8 +93,10 @@ public:
           volatile uint16_t *TimerPeriod,
           volatile uint8_t *Port,
           volatile uint8_t *OutputRegister);
+
     void printInputStatus();
     void dumpAxisParameter();
+    void printStatus();
     void home();
     void move(unsigned long);
     void stopAxis();
