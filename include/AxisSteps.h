@@ -5,7 +5,7 @@ const unsigned int speedAt65535ProzessorCyclesPerStep = 1000000 / (65535 / PROCE
 
 void Axis::newStep()
 {
-  if (!currentDirection & istPosition == 0)
+  if (!currentDirection && istPosition == 0)
   {
     stopAxis();
     return;

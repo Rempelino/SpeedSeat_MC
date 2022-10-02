@@ -4,21 +4,21 @@
 #include "AxisSteps.h"
 
 Axis::Axis(int Pin_Direction,
-             int Pin_Enable,
-             int Pin_Trouble,
-             int Pin_InPosition,
-             int Pin_Endstop,
-             int Pin_Permission,
-             unsigned int StepPinNumber,
-             unsigned short AxisNomber,
-             unsigned long MaxPositionInMillimeter,
-             unsigned long StepsPerMillimeter,
-             unsigned long acceleration,
-             unsigned long maxSpeed,
-             unsigned int HomingOffset,
-             volatile uint16_t *TimerPeriod,
-             volatile uint8_t *Port,
-             volatile uint8_t *OutputRegister)
+           int Pin_Enable,
+           int Pin_Trouble,
+           int Pin_InPosition,
+           int Pin_Endstop,
+           int Pin_Permission,
+           unsigned int StepPinNumber,
+           unsigned short AxisNomber,
+           unsigned long MaxPositionInMillimeter,
+           unsigned long StepsPerMillimeter,
+           unsigned long acceleration,
+           unsigned long maxSpeed,
+           unsigned int HomingOffset,
+           volatile uint16_t *TimerPeriod,
+           volatile uint8_t *Port,
+           volatile uint8_t *OutputRegister)
     : Pin_Direction(Pin_Direction),
       Pin_Enable(Pin_Enable),
       Pin_Trouble(Pin_Trouble),
@@ -51,6 +51,7 @@ Axis::Axis(int Pin_Direction,
 
 void Axis::setAcceleration(unsigned long acceleration)
 {
+    accelerationHasBeenSet = true;
     this->acceleration = acceleration * stepsPerMillimeter;
     this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
@@ -62,7 +63,7 @@ void Axis::lock()
     {
         digitalWrite(Pin_Enable, LOW);
         locked = true;
-        homingAbgeschlossen = false;
+        isHomed = false;
         killed = false;
         ErrorID = 0;
         home();
@@ -83,7 +84,11 @@ bool Axis::isLocked()
 
 void Axis::home()
 {
-    homingAbgeschlossen = false;
+    if(!isFullyInitialized()){
+        return;
+    }
+    isHomed = false;
+    homingActive = true;
     if (SIMULATION)
     {
         Serial.print("Homing Axis: ");
@@ -96,14 +101,13 @@ void Axis::home()
     unsigned long mycrosSinceLastExecute = 0;
     const unsigned long intervall = 20 * stepsPerMillimeter;
     bool AchseHatEndstopVerlassen = false;
-    while (!homingAbgeschlossen)
+    while (!isHomed)
     {
         myMicros = micros();
         mycrosSinceLastExecute = mycrosSinceLastExecute + (myMicros - microsLastCycle);
         microsLastCycle = myMicros;
         if (mycrosSinceLastExecute > intervall)
         {
-
             mycrosSinceLastExecute = mycrosSinceLastExecute - intervall;
 
             if (!AchseHatEndstopVerlassen)
@@ -147,12 +151,12 @@ void Axis::home()
                     microsLastCycle = micros();
                 }
 
-                if (!digitalReadAverage(Pin_Endstop) & !homingAbgeschlossen)
+                if (!digitalReadAverage(Pin_Endstop) & !isHomed)
                 {
-                    homingAbgeschlossen = true;
+                    isHomed = true;
                     istPosition = 0;
                 }
-                if (!homingAbgeschlossen)
+                if (!isHomed)
                 {
                     uint8_t AktuellerWertPort = *Port;
                     if (toggle)
@@ -183,6 +187,7 @@ void Axis::home()
             if (digitalReadAverage(Pin_Endstop))
             {
                 return;
+                homingActive = false;
             }
         }
     }
@@ -190,17 +195,38 @@ void Axis::home()
     move(HomingOffset * stepsPerMillimeter);
 
     while (aktiv)
-    { 
+    {
     }
 
     istPosition = 0;
-    homingAbgeschlossen = true;
+    isHomed = true;
+    homingActive = false;
+}
+
+void Axis::setMaxPosition(unsigned long MaxPosition)
+{
+    this->MaxPosition = MaxPosition;
+    maxPositionHasBeenSet = true;
 }
 
 void Axis::setHomingOffset(unsigned long offset)
 {
-    HomingOffset = offset;
-    home();
+    homingOffsetHasBeenSet = true;
+    if (offset != HomingOffset)
+    {
+        HomingOffset = offset;
+        if (!NO_HARDWARE)
+        {
+            home();
+        }
+    }
+}
+
+void Axis::setMaxSpeed(unsigned long MaxSpeed)
+{
+    maxSpeedHasBeenSet = true;
+    this->maxSpeed = MaxSpeed;
+    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
 }
 
 int Axis::getSomeValue()
@@ -274,7 +300,8 @@ void Axis::dumpAxisParameter()
     Serial.println();
 }
 
-void Axis::printStatus(){
+void Axis::printStatus()
+{
     Serial.println();
 
     if (AxisNomber == 0)
@@ -304,13 +331,13 @@ void Axis::printStatus(){
     Serial.println("Unit -> Millimeter ----------------------------");
 
     Serial.print("Istposition: ");
-    Serial.println(istPosition/stepsPerMillimeter);
+    Serial.println(istPosition / stepsPerMillimeter);
 
     Serial.print("Sollposition: ");
-    Serial.println(sollPosition/stepsPerMillimeter);
+    Serial.println(sollPosition / stepsPerMillimeter);
 
     Serial.print("Speed: ");
-    Serial.println(currentSpeed/stepsPerMillimeter);
+    Serial.println(currentSpeed / stepsPerMillimeter);
 
     Serial.println();
     Serial.println();
@@ -347,7 +374,7 @@ bool Axis::hasError()
         return true;
     }
 
-    if (homingAbgeschlossen & !digitalRead(Pin_Endstop))
+    if (isHomed & !digitalRead(Pin_Endstop))
     {
         timeStamp = millis();
         while (!digitalRead(Pin_Endstop))
@@ -383,4 +410,41 @@ bool Axis::hasError()
 unsigned int Axis::getErrorID()
 {
     return ErrorID;
+}
+
+bool Axis::isFullyInitialized()
+{
+    if(!GET_VALUES_ON_BOOTUP){
+        return true;
+    }
+    if (maxPositionHasBeenSet &&
+        homingOffsetHasBeenSet &&
+        accelerationHasBeenSet &&
+        maxSpeedHasBeenSet)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+CMD Axis::missingValue()
+{
+    if (!maxPositionHasBeenSet){
+        return MAX_POSITION;
+    }else if (!homingOffsetHasBeenSet)
+    {
+        return HOMING_OFFSET;
+    }else if (!accelerationHasBeenSet)
+    {
+        return ACCELLERATION;
+    }
+    else if (!maxSpeedHasBeenSet)
+    {
+        return MAX_SPEED;
+    }else{
+        return IDLE;
+    }
 }

@@ -2,19 +2,17 @@
 #define CONFIG_H
 
 #define EXECUTE_COMMUICATION true
-#define NO_HARDWARE false
+#define NO_HARDWARE true
 #define DEBUG_COMMUNICATION false
 #define SIMULATION false
 #define ANALYZE_INPUTS false
 #define ANALYZE_AXIS false
 #define CALCULATE_ACCELERATION_VIA_INTERRUPT false
 #define ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE true
-#define GET_VALUES_ON_BOOTUP false
+#define GET_VALUES_ON_BOOTUP true
 #define STEPS_PER_MM 40UL
-#define PIN_ENABLE 51
-#define PIN_BEEPER 53
 #define PROTOCOL_LENGTH 8
-#define ALLOW_MOVEMENT_AFTER_BOOTUP true
+#define ALLOW_MOVEMENT_AFTER_BOOTUP false
 #define PREVENT_BAD_HOMING true
 
 //Default Values
