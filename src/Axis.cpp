@@ -1,24 +1,24 @@
-#include "Axxis.h"
-#include "AxxisMove.h"
-#include "AxxisTimer.h"
-#include "AxxisSteps.h"
+#include "Axis.h"
+#include "AxisMove.h"
+#include "AxisTimer.h"
+#include "AxisSteps.h"
 
-Axxis::Axxis(int Pin_Direction,
-             int Pin_Enable,
-             int Pin_Trouble,
-             int Pin_InPosition,
-             int Pin_Endstop,
-             int Pin_Permission,
-             unsigned int StepPinNumber,
-             unsigned short AxisNomber,
-             unsigned long MaxPositionInMillimeter,
-             unsigned long StepsPerMillimeter,
-             unsigned long acceleration,
-             unsigned long maxSpeed,
-             unsigned int HomingOffset,
-             volatile uint16_t *TimerPeriod,
-             volatile uint8_t *Port,
-             volatile uint8_t *OutputRegister)
+Axis::Axis(int Pin_Direction,
+           int Pin_Enable,
+           int Pin_Trouble,
+           int Pin_InPosition,
+           int Pin_Endstop,
+           int Pin_Permission,
+           unsigned int StepPinNumber,
+           unsigned short AxisNomber,
+           unsigned long MaxPositionInMillimeter,
+           unsigned long StepsPerMillimeter,
+           unsigned long acceleration,
+           unsigned long maxSpeed,
+           unsigned int HomingOffset,
+           volatile uint16_t *TimerPeriod,
+           volatile uint8_t *Port,
+           volatile uint8_t *OutputRegister)
     : Pin_Direction(Pin_Direction),
       Pin_Enable(Pin_Enable),
       Pin_Trouble(Pin_Trouble),
@@ -49,41 +49,46 @@ Axxis::Axxis(int Pin_Direction,
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
 }
 
-void Axxis::setAcceleration(unsigned long acceleration)
+void Axis::setAcceleration(unsigned long acceleration)
 {
+    accelerationHasBeenSet = true;
     this->acceleration = acceleration * stepsPerMillimeter;
     this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
 }
 
-void Axxis::lock()
+void Axis::lock()
 {
     if (!locked)
     {
         digitalWrite(Pin_Enable, LOW);
         locked = true;
-        homingAbgeschlossen = false;
+        isHomed = false;
         killed = false;
         ErrorID = 0;
         home();
     }
 }
 
-void Axxis::unlock()
+void Axis::unlock()
 {
     stopAxis();
     locked = false;
     digitalWrite(Pin_Enable, HIGH);
 }
 
-bool Axxis::isLocked()
+bool Axis::isLocked()
 {
     return locked;
 }
 
-void Axxis::home()
+void Axis::home()
 {
-    homingAbgeschlossen = false;
+    if(!isFullyInitialized()){
+        return;
+    }
+    isHomed = false;
+    homingActive = true;
     if (SIMULATION)
     {
         Serial.print("Homing Axis: ");
@@ -96,14 +101,13 @@ void Axxis::home()
     unsigned long mycrosSinceLastExecute = 0;
     const unsigned long intervall = 20 * stepsPerMillimeter;
     bool AchseHatEndstopVerlassen = false;
-    while (!homingAbgeschlossen)
+    while (!isHomed)
     {
         myMicros = micros();
         mycrosSinceLastExecute = mycrosSinceLastExecute + (myMicros - microsLastCycle);
         microsLastCycle = myMicros;
         if (mycrosSinceLastExecute > intervall)
         {
-
             mycrosSinceLastExecute = mycrosSinceLastExecute - intervall;
 
             if (!AchseHatEndstopVerlassen)
@@ -147,12 +151,12 @@ void Axxis::home()
                     microsLastCycle = micros();
                 }
 
-                if (!digitalReadAverage(Pin_Endstop) & !homingAbgeschlossen)
+                if (!digitalReadAverage(Pin_Endstop) & !isHomed)
                 {
-                    homingAbgeschlossen = true;
+                    isHomed = true;
                     istPosition = 0;
                 }
-                if (!homingAbgeschlossen)
+                if (!isHomed)
                 {
                     uint8_t AktuellerWertPort = *Port;
                     if (toggle)
@@ -183,6 +187,7 @@ void Axxis::home()
             if (digitalReadAverage(Pin_Endstop))
             {
                 return;
+                homingActive = false;
             }
         }
     }
@@ -190,25 +195,46 @@ void Axxis::home()
     move(HomingOffset * stepsPerMillimeter);
 
     while (aktiv)
-    { 
+    {
     }
 
     istPosition = 0;
-    homingAbgeschlossen = true;
+    isHomed = true;
+    homingActive = false;
 }
 
-void Axxis::setHomingOffset(unsigned long offset)
+void Axis::setMaxPosition(unsigned long MaxPosition)
 {
-    HomingOffset = offset;
-    home();
+    this->MaxPosition = MaxPosition;
+    maxPositionHasBeenSet = true;
 }
 
-int Axxis::getSomeValue()
+void Axis::setHomingOffset(unsigned long offset)
+{
+    homingOffsetHasBeenSet = true;
+    if (offset != HomingOffset)
+    {
+        HomingOffset = offset;
+        if (!NO_HARDWARE)
+        {
+            home();
+        }
+    }
+}
+
+void Axis::setMaxSpeed(unsigned long MaxSpeed)
+{
+    maxSpeedHasBeenSet = true;
+    this->maxSpeed = MaxSpeed;
+    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
+}
+
+int Axis::getSomeValue()
 {
     return currentDirection;
 }
 
-void Axxis::printInputStatus()
+void Axis::printInputStatus()
 {
     Serial.println();
     if (AxisNomber == 0)
@@ -234,7 +260,7 @@ void Axxis::printInputStatus()
     Serial.println(digitalRead(Pin_Trouble));
 }
 
-void Axxis::dumpAxisParameter()
+void Axis::dumpAxisParameter()
 {
     Serial.println();
 
@@ -274,7 +300,8 @@ void Axxis::dumpAxisParameter()
     Serial.println();
 }
 
-void Axxis::printStatus(){
+void Axis::printStatus()
+{
     Serial.println();
 
     if (AxisNomber == 0)
@@ -304,19 +331,19 @@ void Axxis::printStatus(){
     Serial.println("Unit -> Millimeter ----------------------------");
 
     Serial.print("Istposition: ");
-    Serial.println(istPosition/stepsPerMillimeter);
+    Serial.println(istPosition / stepsPerMillimeter);
 
     Serial.print("Sollposition: ");
-    Serial.println(sollPosition/stepsPerMillimeter);
+    Serial.println(sollPosition / stepsPerMillimeter);
 
     Serial.print("Speed: ");
-    Serial.println(currentSpeed/stepsPerMillimeter);
+    Serial.println(currentSpeed / stepsPerMillimeter);
 
     Serial.println();
     Serial.println();
 }
 
-bool Axxis::digitalReadAverage(int pin)
+bool Axis::digitalReadAverage(int pin)
 {
     int averageingNumber = 10;
     int y = 0;
@@ -338,7 +365,7 @@ bool Axxis::digitalReadAverage(int pin)
     }
 }
 
-bool Axxis::hasError()
+bool Axis::hasError()
 {
     unsigned long int timeStamp;
     const unsigned long int timeTillError = 50;
@@ -347,7 +374,7 @@ bool Axxis::hasError()
         return true;
     }
 
-    if (homingAbgeschlossen & !digitalRead(Pin_Endstop))
+    if (isHomed & !digitalRead(Pin_Endstop))
     {
         timeStamp = millis();
         while (!digitalRead(Pin_Endstop))
@@ -380,7 +407,44 @@ bool Axxis::hasError()
     return false;
 }
 
-unsigned int Axxis::getErrorID()
+unsigned int Axis::getErrorID()
 {
     return ErrorID;
+}
+
+bool Axis::isFullyInitialized()
+{
+    if(!GET_VALUES_ON_BOOTUP){
+        return true;
+    }
+    if (maxPositionHasBeenSet &&
+        homingOffsetHasBeenSet &&
+        accelerationHasBeenSet &&
+        maxSpeedHasBeenSet)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+CMD Axis::missingValue()
+{
+    if (!maxPositionHasBeenSet){
+        return MAX_POSITION;
+    }else if (!homingOffsetHasBeenSet)
+    {
+        return HOMING_OFFSET;
+    }else if (!accelerationHasBeenSet)
+    {
+        return ACCELLERATION;
+    }
+    else if (!maxSpeedHasBeenSet)
+    {
+        return MAX_SPEED;
+    }else{
+        return IDLE;
+    }
 }

@@ -1,6 +1,6 @@
 #include "Arduino.h"
 #include "configuration.h"
-#include "Axxis.h"
+#include "Axis.h"
 #include "communication.h"
 #include "Beeping.h"
 #include "AxisDefinition.h"
@@ -25,6 +25,7 @@ void setup()
   delay(500);
   digitalWrite(PIN_BEEPER, LOW);
   delay(100);
+
   while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
   {
     beep.doubleBeep();
@@ -57,13 +58,6 @@ void setup()
     Y_Axis.dumpAxisParameter();
     Z_Axis.dumpAxisParameter();
   }
-
-  if (!NO_HARDWARE)
-  {
-    X_Axis.home();
-    Y_Axis.home();
-    Z_Axis.home();
-  }
 }
 //--------------------------------------LOOP-------------------------------------------------
 void loop()
@@ -71,6 +65,35 @@ void loop()
   if (EXECUTE_COMMUICATION)
   {
     com.execute();
+  }
+
+  if (!Z_Axis.isHomed)
+  {
+    Z_Axis.home();
+  }
+  if (!X_Axis.isHomed)
+  {
+    X_Axis.home();
+  }
+  if (!Y_Axis.isHomed)
+  {
+    Y_Axis.home();
+  }
+
+  if (GET_VALUES_ON_BOOTUP)
+  {
+    if (!X_Axis.isFullyInitialized())
+    {
+      com.get_value(X_Axis.missingValue());
+    }
+    if (!Y_Axis.isFullyInitialized())
+    {
+      com.get_value(Y_Axis.missingValue());
+    }
+    if (!Z_Axis.isFullyInitialized())
+    {
+      com.get_value(Z_Axis.missingValue());
+    }
   }
 
   if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))
@@ -92,9 +115,9 @@ void loop()
         break;
 
       case MAX_POSITION:
-        X_Axis.MaxPosition = com.recived_value.scaled_to_steps[0];
-        Y_Axis.MaxPosition = com.recived_value.scaled_to_steps[1];
-        Z_Axis.MaxPosition = com.recived_value.scaled_to_steps[2];
+        X_Axis.setMaxPosition(com.recived_value.scaled_to_steps[0]);
+        Y_Axis.setMaxPosition(com.recived_value.scaled_to_steps[1]);
+        Z_Axis.setMaxPosition(com.recived_value.scaled_to_steps[2]);
         com.setMaxPosition(com.recived_value.as_int16[0], com.recived_value.as_int16[1], com.recived_value.as_int16[2]);
         break;
 
@@ -104,6 +127,12 @@ void loop()
         Z_Axis.setAcceleration(com.recived_value.scaled_to_steps[2]);
         break;
 
+      case MAX_SPEED:
+        X_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[0]);
+        Y_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[1]);
+        Z_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[2]);
+        break;
+
       default:
         break;
       }
@@ -111,7 +140,7 @@ void loop()
     }
   }
 
-  if (X_Axis.hasError() || Y_Axis.hasError() || Z_Axis.hasError())
+  if ((X_Axis.hasError() || Y_Axis.hasError() || Z_Axis.hasError()) && !NO_HARDWARE)
   {
     X_Axis.unlock();
     Y_Axis.unlock();
@@ -140,7 +169,8 @@ void loop()
     Z_Axis.lock();
   }
 
-  while (digitalRead(PIN_ENABLE)){
+  while (digitalRead(PIN_ENABLE) && !NO_HARDWARE)
+  {
     X_Axis.stopAxis();
     Y_Axis.stopAxis();
     Z_Axis.stopAxis();

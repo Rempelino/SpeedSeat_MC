@@ -17,8 +17,8 @@
 enum CMD
 {
     POSITION = 0,
-    HOMING_OFFSET = 1,
-    MAX_POSITION = 2,
+    MAX_POSITION = 1,
+    HOMING_OFFSET = 2,
     ACCELLERATION = 3,
     MAX_SPEED = 6,
     HOMING_STATUS = 7,
@@ -46,16 +46,15 @@ struct AvailableInfos
 
 class communication
 {
-    // byte buffer[PROTOCOL_LENGTH];
     unsigned short buffer[PROTOCOL_LENGTH];
-    unsigned long millis_at_sending_answer;
+    unsigned long millisAtLastSendMessage;
     unsigned long steps_per_millimeter;
     unsigned long axis_max_position_as_steps[3];
     bool waiting_for_okay;
     CMD request;
     CMD request_buffer[100];
     void acknowledge(ANSWER);
-    bool verifyData();
+    bool verifyData(unsigned short buffer[PROTOCOL_LENGTH]);
     void readNewCommand();
     void unsignedLongToTwoBytes(unsigned long, unsigned long, byte *, byte *);
     void sendBuffer();

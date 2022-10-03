@@ -1,13 +1,19 @@
 #ifndef AXISMOVE_H
 #define AXISMOVE_H
-#include "Axxis.h"
-#include "AxxisTimer.h"
+#include "Axis.h"
+#include "AxisTimer.h"
 #ifndef SIMULATION
 #define SIMULATION false
 #endif
 
-void Axxis::move(unsigned long neuePosition)
+void Axis::move(unsigned long neuePosition)
 {
+    if (!isHomed && !homingActive){
+        return;
+    }
+    if(!isFullyInitialized()){
+        return;
+    }
     if(!timerHasBeenInitialized){
         TimerInitialisieren();
         timerHasBeenInitialized = true;
@@ -226,7 +232,7 @@ void Axxis::move(unsigned long neuePosition)
 }
 
 
-unsigned long Axxis::getStopPosition()
+unsigned long Axis::getStopPosition()
 {
     if (currentDirection)
     {
@@ -238,7 +244,7 @@ unsigned long Axxis::getStopPosition()
     }
 }
 
-bool Axxis::stoppositionLiegtHinterSollposition(unsigned long neuePosition)
+bool Axis::stoppositionLiegtHinterSollposition(unsigned long neuePosition)
 {
     unsigned long stopPosition = getStopPosition();
     if (currentDirection)
@@ -251,7 +257,7 @@ bool Axxis::stoppositionLiegtHinterSollposition(unsigned long neuePosition)
     }
 }
 
-enum movementType Axxis::getMovementType(unsigned long neuePosition)
+enum movementType Axis::getMovementType(unsigned long neuePosition)
 {
     if (aktiv & ((currentDirection & (istPosition > neuePosition)) || (!currentDirection & (istPosition < neuePosition))))
     {
@@ -275,7 +281,7 @@ enum movementType Axxis::getMovementType(unsigned long neuePosition)
 }
 // defaultMove -> Bewegungsablauf von null oder in gleicher richtung wenn maximale geschwindigkeit erreicht wird. Der Motor wird gestartet und "posStartDeccelerating"
 // wird auf die Abbremsdistanz von Max Speed gesetzt
-void Axxis::defaultMove(unsigned long neuePosition)
+void Axis::defaultMove(unsigned long neuePosition)
 {
     if (SIMULATION)
     {

@@ -1,6 +1,5 @@
 #include "communication.h"
 
-
 void communication::initialize(unsigned long Steps_per_millimeter,
                                unsigned long Axis_1_max_position,
                                unsigned long Axis_2_max_position,
@@ -8,17 +7,20 @@ void communication::initialize(unsigned long Steps_per_millimeter,
 {
     steps_per_millimeter = Steps_per_millimeter;
     setMaxPosition(Axis_1_max_position, Axis_2_max_position, Axis_3_max_position);
-    request_buffer[0] = IDLE;
+    for (size_t i = 0; i < sizeof request_buffer / sizeof request_buffer[0]; i++)
+    {
+        request_buffer[i] = IDLE;
+    }
     request = IDLE;
 }
 
 void communication::execute()
 {
-
     // communication is in IDLE and a Value request has been set
     if ((request_buffer[0] != IDLE) & (Serial.available() == 0) & !waiting_for_okay)
     {
         sendValueRequest();
+        waiting_for_okay = true;
     }
 
     // waiting for acknowledgement of previous send command
@@ -27,6 +29,12 @@ void communication::execute()
         if (Serial.read() == 255)
         {
             waiting_for_okay = false;
+            int x = 0;
+            while (request_buffer[x] != IDLE)
+            {
+                request_buffer[x] = request_buffer[x + 1];
+                x++;
+            }
         }
         else
         {
@@ -42,7 +50,7 @@ void communication::execute()
     }
 
     // reading new command
-    if (!waiting_for_okay & (Serial.available() == PROTOCOL_LENGTH) & (request == IDLE))
+    if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && request == IDLE)
     {
         readNewCommand();
     }
@@ -50,7 +58,7 @@ void communication::execute()
     // timeout while waiting for okay
     if (waiting_for_okay & TIMEOUT_ACTIVE)
     {
-        if (millis() - millis_at_sending_answer > TIMEOUT)
+        if (millis() - millisAtLastSendMessage > TIMEOUT)
         {
             sendBuffer();
         }
@@ -65,6 +73,7 @@ void communication::execute()
 
 void communication::acknowledge(ANSWER answer)
 {
+
     while (Serial.available() > 0)
     {
         Serial.read();
@@ -86,7 +95,7 @@ void communication::acknowledge(ANSWER answer)
     }
 }
 
-bool communication::verifyData()
+bool communication::verifyData(unsigned short buffer[PROTOCOL_LENGTH])
 {
     byte veryfyingResult = 0;
     int x;
@@ -106,21 +115,22 @@ bool communication::verifyData()
 
 void communication::readNewCommand()
 {
+    unsigned short recivedData[PROTOCOL_LENGTH];
     int i;
     for (i = 0; i < PROTOCOL_LENGTH; i++)
     {
-        buffer[i] = Serial.read();
+        recivedData[i] = Serial.read();
     }
 
-    if (!verifyData())
+    if (!verifyData(recivedData))
     {
         acknowledge(NOT_OKAY);
         return;
     }
 
     bool successfulExecuted;
-    CMD command = (CMD)(buffer[0] / 2);
-    bool reading = (bool)(buffer[0] % 2);
+    CMD command = (CMD)(recivedData[0] / 2);
+    bool reading = (bool)(recivedData[0] % 2);
     switch (command)
     {
     case POSITION:
@@ -135,12 +145,13 @@ void communication::readNewCommand()
         }
         else
         {
-            recived_value.as_int16[0] = buffer[1] * 256 + buffer[2];
-            recived_value.as_int16[1] = buffer[3] * 256 + buffer[4];
-            recived_value.as_int16[2] = buffer[5] * 256 + buffer[6];
-            recived_value.as_bool[0] = (bool)(buffer)[1];
-            recived_value.as_bool[1] = (bool)(buffer)[3];
-            recived_value.as_bool[2] = (bool)(buffer)[5];
+            recived_value.as_int16[0] = recivedData[1] * 256 + recivedData[2];
+            // recived_value.as_int16[0] = buffer[1] << 8 + buffer[2];
+            recived_value.as_int16[1] = recivedData[3] * 256 + recivedData[4];
+            recived_value.as_int16[2] = recivedData[5] * 256 + recivedData[6];
+            recived_value.as_bool[0] = (bool)(recivedData)[1];
+            recived_value.as_bool[1] = (bool)(recivedData)[3];
+            recived_value.as_bool[2] = (bool)(recivedData)[5];
             recived_value.scaled_to_max_axis_pos_as_steps[0] = (unsigned long)(recived_value.as_int16[0]) * axis_max_position_as_steps[0] / 65535;
             recived_value.scaled_to_max_axis_pos_as_steps[1] = (unsigned long)(recived_value.as_int16[1]) * axis_max_position_as_steps[1] / 65535;
             recived_value.scaled_to_max_axis_pos_as_steps[2] = (unsigned long)(recived_value.as_int16[2]) * axis_max_position_as_steps[2] / 65535;
@@ -149,8 +160,8 @@ void communication::readNewCommand()
             recived_value.as_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
             recived_value.command = command;
             recived_value.is_available = true;
+            successfulExecuted = true;
         }
-        successfulExecuted = true;
         break;
 
     default:
@@ -197,6 +208,12 @@ void communication::unsignedLongToTwoBytes(unsigned long Value, unsigned long Ma
 
 void communication::sendBuffer()
 {
+    for (size_t i = 0; i < PROTOCOL_LENGTH; i++)
+    {
+        Serial.write(buffer[i]);
+        Serial.flush();
+    }
+    millisAtLastSendMessage = millis();
 }
 
 void communication::sendAnswer()
@@ -205,12 +222,32 @@ void communication::sendAnswer()
 
 void communication::sendValueRequest()
 {
+    unsigned short commandByte = (unsigned short)(request_buffer[0]);
+    commandByte = commandByte * 2 + 1;
+    memset(buffer, 0, sizeof buffer);
+    buffer[0] = commandByte;
+    buffer[PROTOCOL_LENGTH - 1] = commandByte;
+    sendBuffer();
 }
 
 void communication::setNextValue()
 {
 }
 
-void communication::get_value(CMD)
+void communication::get_value(CMD requestedValue)
 {
+    int x = 0;
+    while (true)
+    {
+        if (request_buffer[x] == IDLE)
+        {
+            request_buffer[x] = requestedValue;
+            return;
+        }
+        if (request_buffer[x] == requestedValue)
+        {
+            return;
+        }
+        x++;
+    }
 }

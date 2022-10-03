@@ -5,10 +5,10 @@
 #define ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS 4UL
 #define ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES (ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS * 1000UL * PROCESSOR_CYCLES_PER_MICROSECOND)
 #endif
-#ifndef SIMULATION
-#define SIMULATION false
-#endif
 #include "Arduino.h"
+#include "communication.h"
+#include "configuration.h"
+
 
 enum movementType
 {
@@ -17,7 +17,7 @@ enum movementType
     movementExtension
 };
 
-class Axxis
+class Axis
 {
 private:
     const int Pin_Direction;
@@ -36,7 +36,6 @@ private:
 
     bool accelerating;
     bool deccelerating;
-    bool homingAbgeschlossen;
     bool changeOfDirection;
     bool timerHasBeenInitialized;
     volatile bool runningMinSpeed;
@@ -57,12 +56,17 @@ private:
     bool toggle;
     unsigned int stepPeriodInProcessorCycles = 65535;
     unsigned long stepsPerMillimeter;
-    bool preventBadHoming = false;
+    bool preventBadHoming = PREVENT_BAD_HOMING;
     bool killed;
     unsigned int ErrorID;
     bool locked = true;
+    bool homingActive;
 
-    
+    bool maxPositionHasBeenSet;
+    bool homingOffsetHasBeenSet;
+    bool accelerationHasBeenSet;
+    bool maxSpeedHasBeenSet;
+
     unsigned long getStopPosition();
     bool stoppositionLiegtHinterSollposition(unsigned long);
     enum movementType getMovementType(unsigned long);
@@ -76,8 +80,9 @@ public:
     volatile bool aktiv;
     unsigned long MaxPosition;
     volatile unsigned long istPosition;
+    bool isHomed;
 
-    Axxis(int pin_Direction,
+    Axis(int pin_Direction,
           int Pin_Enable,
           int Pin_Trouble,
           int Pin_InPosition,
@@ -108,8 +113,12 @@ public:
     void lock();
     void unlock();
     bool isLocked();
+    void setMaxPosition(unsigned long MaxPosition);
     void setHomingOffset(unsigned long offset);
     void setAcceleration(unsigned long acceleration);
+    void setMaxSpeed(unsigned long maxSpeed);
+    bool isFullyInitialized();
+    CMD missingValue();
 };
 
 #endif

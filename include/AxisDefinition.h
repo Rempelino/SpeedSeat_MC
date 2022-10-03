@@ -1,10 +1,10 @@
 #ifndef AXISDEFINITION_H
 #define AXISDEFINITION_H
 #include "pins.h"
-#include "Axxis.h"
+#include "Axis.h"
 #include "configuration.h"
 
-Axxis X_Axis(PIN_X_DIRECTION,
+Axis X_Axis(PIN_X_DIRECTION,
              PIN_X_ENABLE,
              PIN_X_TROUBLE,
              PIN_X_IN_POSITION,
@@ -22,7 +22,7 @@ Axxis X_Axis(PIN_X_DIRECTION,
              &REGISTER_PIN_26);
 ISR(TIMER3_COMPA_vect) { X_Axis.newStep(); }
 
-Axxis Y_Axis(PIN_Y_DIRECTION,
+Axis Y_Axis(PIN_Y_DIRECTION,
              PIN_Y_ENABLE,
              PIN_Y_TROUBLE,
              PIN_Y_IN_POSITION,
@@ -40,7 +40,7 @@ Axxis Y_Axis(PIN_Y_DIRECTION,
              &REGISTER_PIN_14);
 ISR(TIMER4_COMPA_vect) { Y_Axis.newStep(); }
 
-Axxis Z_Axis(PIN_Z_DIRECTION,
+Axis Z_Axis(PIN_Z_DIRECTION,
              PIN_Z_ENABLE,
              PIN_Z_TROUBLE,
              PIN_Z_IN_POSITION,
