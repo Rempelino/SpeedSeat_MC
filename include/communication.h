@@ -22,6 +22,7 @@ enum CMD
     ACCELLERATION = 3,
     MAX_SPEED = 6,
     HOMING_STATUS = 7,
+    NEW_HOMING = 8,
 
     IDLE = 9
 };

@@ -1,6 +1,6 @@
 // Allgemeine Pins
 #define PIN_ENABLE 51
-#define PIN_BEEPER 13//53
+#define PIN_BEEPER 53
 
 // X-Axis
 #define PIN_X_STEP 26

@@ -80,20 +80,17 @@ void loop()
     Y_Axis.home();
   }
 
-  if (GET_VALUES_ON_BOOTUP)
+  if (!X_Axis.isFullyInitialized())
   {
-    if (!X_Axis.isFullyInitialized())
-    {
-      com.get_value(X_Axis.missingValue());
-    }
-    if (!Y_Axis.isFullyInitialized())
-    {
-      com.get_value(Y_Axis.missingValue());
-    }
-    if (!Z_Axis.isFullyInitialized())
-    {
-      com.get_value(Z_Axis.missingValue());
-    }
+    com.get_value(X_Axis.missingValue());
+  }
+  if (!Y_Axis.isFullyInitialized())
+  {
+    com.get_value(Y_Axis.missingValue());
+  }
+  if (!Z_Axis.isFullyInitialized())
+  {
+    com.get_value(Z_Axis.missingValue());
   }
 
   if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))
@@ -122,16 +119,27 @@ void loop()
         break;
 
       case ACCELLERATION:
-        X_Axis.setAcceleration(com.recived_value.scaled_to_steps[0]);
-        Y_Axis.setAcceleration(com.recived_value.scaled_to_steps[1]);
-        Z_Axis.setAcceleration(com.recived_value.scaled_to_steps[2]);
+        X_Axis.setAcceleration(com.recived_value.as_int16[0]);
+        Y_Axis.setAcceleration(com.recived_value.as_int16[1]);
+        Z_Axis.setAcceleration(com.recived_value.as_int16[2]);
         break;
 
       case MAX_SPEED:
-        X_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[0]);
-        Y_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[1]);
-        Z_Axis.setMaxSpeed(com.recived_value.scaled_to_steps[2]);
+        X_Axis.setMaxSpeed(com.recived_value.as_int16[0]);
+        Y_Axis.setMaxSpeed(com.recived_value.as_int16[1]);
+        Z_Axis.setMaxSpeed(com.recived_value.as_int16[2]);
         break;
+
+      case NEW_HOMING:
+        if(com.recived_value.as_bool[0]){
+          X_Axis.home();
+        }
+        if(com.recived_value.as_bool[1]){
+          Y_Axis.home();
+        }
+        if(com.recived_value.as_bool[2]){
+          Z_Axis.home();
+        }
 
       default:
         break;

@@ -5,6 +5,15 @@ const unsigned int speedAt65535ProzessorCyclesPerStep = 1000000 / (65535 / PROCE
 
 void Axis::newStep()
 {
+
+  CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation + stepPeriodInProcessorCycles;
+  while (CyclesSinceLastAccelerationCalculation >= ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES)
+  {
+    CyclesSinceLastAccelerationCalculation = CyclesSinceLastAccelerationCalculation - ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES;
+    stepPeriodInProcessorCycles = getTimeTillNextStep();
+    *TimerPeriod = stepPeriodInProcessorCycles;
+  }
+
   if (!currentDirection && istPosition == 0)
   {
     stopAxis();
@@ -37,7 +46,7 @@ void Axis::newStep()
     istPosition--;
   }
 
-  if (istPosition == MaxPosition + 1)
+  if (istPosition == MaxPosition + 1 && currentDirection)
   {
     stopAxis();
     killed = true;
