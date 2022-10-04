@@ -46,9 +46,10 @@ Axis::Axis(int Pin_Direction,
     digitalWrite(Pin_Enable, LOW);
     uint8_t AktuellerWertPort = *OutputRegister;
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
-
     accelerationHasBeenSet = false;
     maxSpeedHasBeenSet = false;
+    nextAxisNomber++;
+
 }
 
 void Axis::setAcceleration(unsigned long acceleration)
