@@ -67,6 +67,8 @@ private:
     bool accelerationHasBeenSet;
     bool maxSpeedHasBeenSet;
 
+    static unsigned short nextAxisNomber;
+
     unsigned long getStopPosition();
     bool stoppositionLiegtHinterSollposition(unsigned long);
     enum movementType getMovementType(unsigned long);
@@ -89,7 +91,6 @@ public:
           int Pin_Endstop,
           int Pin_Permission,
           unsigned int StepPinNumber,
-          unsigned short AxisNomber,
           unsigned long MaxPositionInMillimeter,
           unsigned long StepsPerMillimeter,
           unsigned long acceleration,
@@ -120,5 +121,6 @@ public:
     bool isFullyInitialized();
     CMD missingValue();
 };
+
 
 #endif

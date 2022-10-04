@@ -12,6 +12,13 @@ int AxisInBearbeitung;
 void setup()
 {
   Serial.begin(38400);
+
+  while(true){
+    Serial.println(X_Axis.getSomeValue());
+    Serial.println(Y_Axis.getSomeValue());
+    Serial.println(Z_Axis.getSomeValue());
+    delay(1000);
+  }
   com.initialize(STEPS_PER_MM, X_AXIS_MAX_POSITION, Y_AXIS_MAX_POSITION, Z_AXIS_MAX_POSITION);
   while (DEBUG_COMMUNICATION)
   {

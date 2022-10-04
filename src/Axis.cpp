@@ -2,7 +2,7 @@
 #include "AxisMove.h"
 #include "AxisTimer.h"
 #include "AxisSteps.h"
-
+unsigned short Axis::nextAxisNomber = 0;
 Axis::Axis(int Pin_Direction,
            int Pin_Enable,
            int Pin_Trouble,
@@ -10,7 +10,6 @@ Axis::Axis(int Pin_Direction,
            int Pin_Endstop,
            int Pin_Permission,
            unsigned int StepPinNumber,
-           unsigned short AxisNomber,
            unsigned long MaxPositionInMillimeter,
            unsigned long StepsPerMillimeter,
            unsigned long acceleration,
@@ -26,7 +25,7 @@ Axis::Axis(int Pin_Direction,
       Pin_Endstop(Pin_Endstop),
       Pin_Permission(Pin_Permission),
       StepPinNumber(StepPinNumber),
-      AxisNomber(AxisNomber)
+      AxisNomber(nextAxisNomber)
 {
 
     this->MaxPosition = MaxPositionInMillimeter * StepsPerMillimeter;
@@ -47,6 +46,7 @@ Axis::Axis(int Pin_Direction,
     digitalWrite(Pin_Enable, LOW);
     uint8_t AktuellerWertPort = *OutputRegister;
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
+    nextAxisNomber++;
 }
 
 void Axis::setAcceleration(unsigned long acceleration)
@@ -231,7 +231,7 @@ void Axis::setMaxSpeed(unsigned long MaxSpeed)
 
 int Axis::getSomeValue()
 {
-    return currentDirection;
+    return AxisNomber;
 }
 
 void Axis::printInputStatus()
@@ -368,7 +368,7 @@ bool Axis::digitalReadAverage(int pin)
 bool Axis::hasError()
 {
     unsigned long int timeStamp;
-    const unsigned long int timeTillError = 50;
+    const unsigned long int timeTillError = 50;//time delay to prevent errors due to noise
     if (killed)
     {
         return true;
