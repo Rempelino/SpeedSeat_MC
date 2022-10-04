@@ -29,13 +29,13 @@ Axis::Axis(int Pin_Direction,
 {
 
     this->MaxPosition = MaxPositionInMillimeter * StepsPerMillimeter;
-    this->maxSpeed = maxSpeed * StepsPerMillimeter;
     this->HomingOffset = HomingOffset;
     this->TimerPeriod = TimerPeriod;
     this->Port = Port;
     this->OutputRegister = OutputRegister;
     this->stepsPerMillimeter = StepsPerMillimeter;
     setAcceleration(acceleration);
+    setMaxSpeed(maxSpeed);
     pinMode(Pin_Direction, OUTPUT);
     pinMode(Pin_Enable, OUTPUT);
     pinMode(Pin_InPosition, INPUT_PULLUP);
@@ -46,7 +46,9 @@ Axis::Axis(int Pin_Direction,
     digitalWrite(Pin_Enable, LOW);
     uint8_t AktuellerWertPort = *OutputRegister;
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
-    nextAxisNomber++;
+
+    accelerationHasBeenSet = false;
+    maxSpeedHasBeenSet = false;
 }
 
 void Axis::setAcceleration(unsigned long acceleration)
@@ -84,7 +86,8 @@ bool Axis::isLocked()
 
 void Axis::home()
 {
-    if(!isFullyInitialized()){
+    if (!isFullyInitialized())
+    {
         return;
     }
     isHomed = false;
@@ -205,7 +208,15 @@ void Axis::home()
 
 void Axis::setMaxPosition(unsigned long MaxPosition)
 {
-    this->MaxPosition = MaxPosition;
+    if (this->MaxPosition != MaxPosition)
+    {
+        unsigned long newPosition = istPosition * MaxPosition / this->MaxPosition;
+        this->MaxPosition = MaxPosition;
+        if (maxPositionHasBeenSet)
+        {
+            move(newPosition);
+        }
+    }
     maxPositionHasBeenSet = true;
 }
 
@@ -225,7 +236,7 @@ void Axis::setHomingOffset(unsigned long offset)
 void Axis::setMaxSpeed(unsigned long MaxSpeed)
 {
     maxSpeedHasBeenSet = true;
-    this->maxSpeed = MaxSpeed;
+    this->maxSpeed = MaxSpeed * stepsPerMillimeter;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
 }
 
@@ -414,7 +425,8 @@ unsigned int Axis::getErrorID()
 
 bool Axis::isFullyInitialized()
 {
-    if(!GET_VALUES_ON_BOOTUP){
+    if (!GET_VALUES_ON_BOOTUP)
+    {
         return true;
     }
     if (maxPositionHasBeenSet &&
@@ -432,19 +444,24 @@ bool Axis::isFullyInitialized()
 
 CMD Axis::missingValue()
 {
-    if (!maxPositionHasBeenSet){
+    if (!maxPositionHasBeenSet)
+    {
         return MAX_POSITION;
-    }else if (!homingOffsetHasBeenSet)
+    }
+    else if (!homingOffsetHasBeenSet)
     {
         return HOMING_OFFSET;
-    }else if (!accelerationHasBeenSet)
+    }
+    else if (!accelerationHasBeenSet)
     {
         return ACCELLERATION;
     }
     else if (!maxSpeedHasBeenSet)
     {
         return MAX_SPEED;
-    }else{
+    }
+    else
+    {
         return IDLE;
     }
 }

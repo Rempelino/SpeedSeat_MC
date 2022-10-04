@@ -139,6 +139,7 @@ void communication::readNewCommand()
     case ACCELLERATION:
     case MAX_SPEED:
     case HOMING_STATUS:
+    case NEW_HOMING:
         if (reading)
         {
             request = command;
@@ -158,6 +159,9 @@ void communication::readNewCommand()
             recived_value.as_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
             recived_value.as_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
             recived_value.as_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
+            recived_value.scaled_to_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
+            recived_value.scaled_to_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
+            recived_value.scaled_to_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
             recived_value.command = command;
             recived_value.is_available = true;
             successfulExecuted = true;
