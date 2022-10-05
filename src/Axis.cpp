@@ -49,7 +49,6 @@ Axis::Axis(int Pin_Direction,
     accelerationHasBeenSet = false;
     maxSpeedHasBeenSet = false;
     nextAxisNomber++;
-
 }
 
 void Axis::setAcceleration(unsigned long acceleration)
