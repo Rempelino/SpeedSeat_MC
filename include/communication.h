@@ -14,6 +14,8 @@
 #define TIMEOUT_ACTIVE true
 #endif
 
+#ifndef STRUCT_CMD
+#define STRUCT_CMD
 enum CMD
 {
     POSITION = 0,
@@ -26,7 +28,7 @@ enum CMD
 
     IDLE = 9
 };
-
+#endif
 enum ANSWER
 {
     OKAY = 0,

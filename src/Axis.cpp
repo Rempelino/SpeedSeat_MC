@@ -2,6 +2,7 @@
 #include "AxisMove.h"
 #include "AxisTimer.h"
 #include "AxisSteps.h"
+#include "AxisEEPROM.h"
 unsigned short Axis::nextAxisNomber = 0;
 Axis::Axis(int Pin_Direction,
            int Pin_Enable,
@@ -46,17 +47,10 @@ Axis::Axis(int Pin_Direction,
     digitalWrite(Pin_Enable, LOW);
     uint8_t AktuellerWertPort = *OutputRegister;
     *OutputRegister = AktuellerWertPort | (1 << StepPinNumber);
-    accelerationHasBeenSet = false;
-    maxSpeedHasBeenSet = false;
     nextAxisNomber++;
-}
-
-void Axis::setAcceleration(unsigned long acceleration)
-{
-    accelerationHasBeenSet = true;
-    this->acceleration = acceleration * stepsPerMillimeter;
-    this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
-    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
+    readData();
+    saveData();
+    isInitialzed = true;
 }
 
 void Axis::lock()
@@ -86,10 +80,6 @@ bool Axis::isLocked()
 
 void Axis::home()
 {
-    if (!isFullyInitialized())
-    {
-        return;
-    }
     isHomed = false;
     homingActive = true;
     if (SIMULATION)
@@ -212,20 +202,21 @@ void Axis::setMaxPosition(unsigned long MaxPosition)
     {
         unsigned long newPosition = istPosition * MaxPosition / this->MaxPosition;
         this->MaxPosition = MaxPosition;
-        if (maxPositionHasBeenSet)
-        {
+        
+        if (isInitialzed)
+        {   
+            saveData();
             move(newPosition);
         }
     }
-    maxPositionHasBeenSet = true;
 }
 
 void Axis::setHomingOffset(unsigned long offset)
 {
-    homingOffsetHasBeenSet = true;
     if (offset != HomingOffset)
     {
         HomingOffset = offset;
+        saveData();
         if (!NO_HARDWARE)
         {
             home();
@@ -235,14 +226,27 @@ void Axis::setHomingOffset(unsigned long offset)
 
 void Axis::setMaxSpeed(unsigned long MaxSpeed)
 {
-    maxSpeedHasBeenSet = true;
     this->maxSpeed = MaxSpeed * stepsPerMillimeter;
     this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
+    if (isInitialzed){
+        saveData();
+    }
+    
+}
+
+void Axis::setAcceleration(unsigned long acceleration)
+{
+    this->acceleration = acceleration * stepsPerMillimeter;
+    this->accelerationPerAccelerationRecalculation = this->acceleration / PROCESSOR_CYCLES_PER_MICROSECOND * ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES / 1000000;
+    this->DistanzAbbremsenVonMaxSpeed = (this->maxSpeed * this->maxSpeed) / (2 * this->acceleration);
+    if (isInitialzed){
+        saveData();
+    }
 }
 
 int Axis::getSomeValue()
 {
-    return AxisNomber;
+    return HomingOffset;
 }
 
 void Axis::printInputStatus()
@@ -421,47 +425,4 @@ bool Axis::hasError()
 unsigned int Axis::getErrorID()
 {
     return ErrorID;
-}
-
-bool Axis::isFullyInitialized()
-{
-    if (!GET_VALUES_ON_BOOTUP)
-    {
-        return true;
-    }
-    if (maxPositionHasBeenSet &&
-        homingOffsetHasBeenSet &&
-        accelerationHasBeenSet &&
-        maxSpeedHasBeenSet)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-CMD Axis::missingValue()
-{
-    if (!maxPositionHasBeenSet)
-    {
-        return MAX_POSITION;
-    }
-    else if (!homingOffsetHasBeenSet)
-    {
-        return HOMING_OFFSET;
-    }
-    else if (!accelerationHasBeenSet)
-    {
-        return ACCELLERATION;
-    }
-    else if (!maxSpeedHasBeenSet)
-    {
-        return MAX_SPEED;
-    }
-    else
-    {
-        return IDLE;
-    }
 }

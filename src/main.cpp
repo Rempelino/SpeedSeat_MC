@@ -10,15 +10,23 @@ communication com;
 Beeping beep(PIN_BEEPER, 400, 1000);
 int AxisInBearbeitung;
 
+void executeWrapper()
+{
+  com.execute();
+}
 
 void setup()
 {
   Serial.begin(38400);
+  Serial.print(X_Axis.getSomeValue());
+  while(1);
   com.initialize(STEPS_PER_MM, X_AXIS_MAX_POSITION, Y_AXIS_MAX_POSITION, Z_AXIS_MAX_POSITION);
   while (DEBUG_COMMUNICATION)
   {
     com.execute();
   }
+
+  //threading c([](){com.execute(); },100);
 
   pinMode(PIN_ENABLE, INPUT_PULLUP);
   pinMode(PIN_BEEPER, OUTPUT);
@@ -80,19 +88,6 @@ void loop()
   if (!Y_Axis.isHomed)
   {
     Y_Axis.home();
-  }
-
-  if (!X_Axis.isFullyInitialized())
-  {
-    com.get_value(X_Axis.missingValue());
-  }
-  if (!Y_Axis.isFullyInitialized())
-  {
-    com.get_value(Y_Axis.missingValue());
-  }
-  if (!Z_Axis.isFullyInitialized())
-  {
-    com.get_value(Z_Axis.missingValue());
   }
 
   if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))

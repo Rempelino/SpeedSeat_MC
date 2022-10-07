@@ -11,9 +11,6 @@ void Axis::move(unsigned long neuePosition)
     if (!isHomed && !homingActive){
         return;
     }
-    if(!isFullyInitialized()){
-        return;
-    }
     if(!timerHasBeenInitialized){
         TimerInitialisieren();
         timerHasBeenInitialized = true;

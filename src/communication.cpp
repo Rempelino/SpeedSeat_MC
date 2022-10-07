@@ -50,7 +50,7 @@ void communication::execute()
     }
 
     // reading new command
-    if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && request == IDLE)
+    if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && request == IDLE && !recived_value.is_available)
     {
         readNewCommand();
     }
