@@ -1,7 +1,6 @@
 #ifndef BEEP_H
 #define BEEP_H
 #include "Arduino.h"
-#include "threading.h"
 
 class Beeping
 {

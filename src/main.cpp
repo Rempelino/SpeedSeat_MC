@@ -4,7 +4,6 @@
 #include "communication.h"
 #include "Beeping.h"
 #include "AxisDefinition.h"
-#include "threading.h"
 
 communication com;
 Beeping beep(PIN_BEEPER, 400, 1000);
