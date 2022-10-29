@@ -1,12 +1,7 @@
 #include "communication.h"
 
-void communication::initialize(unsigned long Steps_per_millimeter,
-                               unsigned long Axis_1_max_position,
-                               unsigned long Axis_2_max_position,
-                               unsigned long Axis_3_max_position)
+communication::communication()
 {
-    steps_per_millimeter = Steps_per_millimeter;
-    setMaxPosition(Axis_1_max_position, Axis_2_max_position, Axis_3_max_position);
     for (size_t i = 0; i < sizeof request_buffer / sizeof request_buffer[0]; i++)
     {
         request_buffer[i] = IDLE;
@@ -140,6 +135,8 @@ void communication::readNewCommand()
     case MAX_SPEED:
     case HOMING_STATUS:
     case NEW_HOMING:
+    case HOMING_SPEED:
+    case HOMING_ACCELERATION:
         if (reading)
         {
             request = command;
@@ -153,15 +150,6 @@ void communication::readNewCommand()
             recived_value.as_bool[0] = (bool)(recivedData)[1];
             recived_value.as_bool[1] = (bool)(recivedData)[3];
             recived_value.as_bool[2] = (bool)(recivedData)[5];
-            recived_value.scaled_to_max_axis_pos_as_steps[0] = (unsigned long)(recived_value.as_int16[0]) * axis_max_position_as_steps[0] / 65535;
-            recived_value.scaled_to_max_axis_pos_as_steps[1] = (unsigned long)(recived_value.as_int16[1]) * axis_max_position_as_steps[1] / 65535;
-            recived_value.scaled_to_max_axis_pos_as_steps[2] = (unsigned long)(recived_value.as_int16[2]) * axis_max_position_as_steps[2] / 65535;
-            recived_value.as_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
-            recived_value.as_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
-            recived_value.as_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
-            recived_value.scaled_to_steps[0] = recived_value.as_int16[0] * steps_per_millimeter;
-            recived_value.scaled_to_steps[1] = recived_value.as_int16[1] * steps_per_millimeter;
-            recived_value.scaled_to_steps[2] = recived_value.as_int16[2] * steps_per_millimeter;
             recived_value.command = command;
             recived_value.is_available = true;
             successfulExecuted = true;
@@ -187,13 +175,6 @@ void communication::readNewCommand()
     }
 }
 
-void communication::setMaxPosition(unsigned long X, unsigned long Y, unsigned long Z)
-{
-    axis_max_position_as_steps[0] = X * steps_per_millimeter;
-    axis_max_position_as_steps[1] = Y * steps_per_millimeter;
-    axis_max_position_as_steps[2] = Z * steps_per_millimeter;
-}
-
 void communication::unsignedLongToTwoBytes(unsigned long Value, unsigned long MaxValue, byte *Byte1, byte *Byte2)
 {
     double ValueScaled;
@@ -212,6 +193,13 @@ void communication::unsignedLongToTwoBytes(unsigned long Value, unsigned long Ma
 
 void communication::sendBuffer()
 {
+    byte veryfyingResult = 0;
+    for (int x = 0; x != PROTOCOL_LENGTH - 1; ++x)
+    {
+        veryfyingResult = veryfyingResult xor buffer[x];
+    }
+    buffer[PROTOCOL_LENGTH - 1] = veryfyingResult;
+
     for (size_t i = 0; i < PROTOCOL_LENGTH; i++)
     {
         Serial.write(buffer[i]);
@@ -230,7 +218,6 @@ void communication::sendValueRequest()
     commandByte = commandByte * 2 + 1;
     memset(buffer, 0, sizeof buffer);
     buffer[0] = commandByte;
-    buffer[PROTOCOL_LENGTH - 1] = commandByte;
     sendBuffer();
 }
 
@@ -254,4 +241,27 @@ void communication::get_value(CMD requestedValue)
         }
         x++;
     }
+}
+
+void communication::sendInitFinishedCommand()
+{
+    unsigned short commandByte = 0x02;
+    memset(buffer, 0, sizeof buffer);
+    buffer[0] = commandByte;
+    buffer[PROTOCOL_LENGTH - 1] = commandByte;
+    sendBuffer();
+}
+
+void communication::sendValue(CMD command, unsigned value1, unsigned value2, unsigned value3)
+{
+    unsigned short commandByte = (unsigned short)(command);
+    commandByte = commandByte * 2;
+    memset(buffer, 0, sizeof buffer);
+    buffer[1] = 0;
+    buffer[2] = 100;
+    buffer[3] = 0;
+    buffer[4] = 200;
+    buffer[5] = 0;
+    buffer[6] = 220;
+    sendBuffer();
 }

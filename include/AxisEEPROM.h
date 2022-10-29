@@ -10,18 +10,18 @@ POSITION = 0,
     NEW_HOMING = 8,*/
 void Axis::saveData()
 {
-    EEPROMAdress = AxisNomber * 1000;
-    writeEEPROM(MaxPosition);
-    writeEEPROM(HomingOffset);
+    EEPROMAdress = AxisNumber * 1000;
+    writeEEPROM(maxPosition);
+    writeEEPROM(homingOffset);
     writeEEPROM(acceleration);
     writeEEPROM(maxSpeed);
 }
 
 void Axis::readData()
 {
-    EEPROMAdress = AxisNomber * 1000;
-    readEEPROM(MaxPosition);
-    readEEPROM(HomingOffset);
+    EEPROMAdress = AxisNumber * 1000;
+    readEEPROM(maxPosition);
+    readEEPROM(homingOffset);
     readEEPROM(acceleration);
     readEEPROM(maxSpeed);
 }

@@ -22,9 +22,11 @@ enum CMD
     MAX_POSITION = 1,
     HOMING_OFFSET = 2,
     ACCELLERATION = 3,
-    MAX_SPEED = 6,
-    HOMING_STATUS = 7,
-    NEW_HOMING = 8,
+    MAX_SPEED = 4,
+    HOMING_STATUS = 5,
+    NEW_HOMING = 6,
+    HOMING_SPEED = 7,
+    HOMING_ACCELERATION = 8,
 
     IDLE = 9
 };
@@ -41,9 +43,6 @@ struct AvailableInfos
     bool is_available;
     unsigned int as_int16[3];
     bool as_bool[3];
-    unsigned long scaled_to_max_axis_pos_as_steps[3];
-    unsigned long scaled_to_steps[3];
-    unsigned long as_steps[3];
     CMD command;
 };
 
@@ -56,7 +55,6 @@ class communication
     bool waiting_for_okay;
     CMD request;
     CMD request_buffer[100];
-    void acknowledge(ANSWER);
     bool verifyData(unsigned short buffer[PROTOCOL_LENGTH]);
     void readNewCommand();
     void unsignedLongToTwoBytes(unsigned long, unsigned long, byte *, byte *);
@@ -66,15 +64,14 @@ class communication
     void setNextValue();
 
 public:
-    void initialize(unsigned long Steps_per_millimeter,
-                    unsigned long Axis_1_max_position,
-                    unsigned long Axis_2_max_position,
-                    unsigned long Axis_3_max_position);
+    void acknowledge(ANSWER);
+    void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
+    communication();
     void get_value(CMD);
     void execute();
+    void sendInitFinishedCommand();
     unsigned long TwoBytesToSteps(byte, byte, unsigned long);
     AvailableInfos recived_value;
     CMD available_command;
-    void setMaxPosition(unsigned long X, unsigned long Y, unsigned long Z);
 };
 #endif

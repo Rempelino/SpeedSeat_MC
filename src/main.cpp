@@ -3,29 +3,44 @@
 #include "Axis.h"
 #include "communication.h"
 #include "Beeping.h"
-#include "AxisDefinition.h"
 
 communication com;
+Axis X_Axis(PIN_X_STEP, PIN_X_DIRECTION, PIN_X_ENABLE, PIN_X_ENDSTOP, PIN_X_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
+Axis Y_Axis(PIN_Y_STEP, PIN_Y_DIRECTION, PIN_Y_ENABLE, PIN_Y_ENDSTOP, PIN_Y_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
+Axis Z_Axis(PIN_Z_STEP, PIN_Z_DIRECTION, PIN_Z_ENABLE, PIN_Z_ENDSTOP, PIN_Z_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
+
 Beeping beep(PIN_BEEPER, 400, 1000);
 int AxisInBearbeitung;
-
-void executeWrapper()
-{
-  com.execute();
-}
 
 void setup()
 {
   Serial.begin(38400);
-  Serial.print(X_Axis.getSomeValue());
-  while(1);
-  com.initialize(STEPS_PER_MM, X_AXIS_MAX_POSITION, Y_AXIS_MAX_POSITION, Z_AXIS_MAX_POSITION);
+  delay(300);
+  pinMode(56, OUTPUT);
+  digitalWrite(56, LOW);
+  pinMode(60, OUTPUT);
+  tone(60, 20, 500000);
+  while (Serial.available() == 0)
+  {
+    ; // wait for serial port to connect. Needed for native USB
+  }
+  noTone(60);
+  com.acknowledge(OKAY);
+  delay(1000);
+  com.sendInitFinishedCommand();
   while (DEBUG_COMMUNICATION)
   {
     com.execute();
+    if (millis() > 5000)
+    {
+      com.sendValue(POSITION, 100, 200, 300);
+      while (1)
+      {
+      }
+    }
   }
 
-  //threading c([](){com.execute(); },100);
+  // threading c([](){com.execute(); },100);
 
   pinMode(PIN_ENABLE, INPUT_PULLUP);
   pinMode(PIN_BEEPER, OUTPUT);
@@ -40,32 +55,9 @@ void setup()
     beep.doubleBeep();
   }
 
-  while (ANALYZE_INPUTS)
-  {
-    X_Axis.printInputStatus();
-    Y_Axis.printInputStatus();
-    Z_Axis.printInputStatus();
-    delay(1000);
-  }
-
-  while (ANALYZE_AXIS)
-  {
-    X_Axis.dumpAxisParameter();
-    Y_Axis.dumpAxisParameter();
-    Z_Axis.dumpAxisParameter();
-    delay(1000);
-  }
-
   while (digitalRead(PIN_ENABLE) & !NO_HARDWARE)
   {
     delay(100);
-  }
-
-  if (SIMULATION)
-  {
-    X_Axis.dumpAxisParameter();
-    Y_Axis.dumpAxisParameter();
-    Z_Axis.dumpAxisParameter();
   }
 }
 //--------------------------------------LOOP-------------------------------------------------
@@ -76,29 +68,29 @@ void loop()
     com.execute();
   }
 
-  if (!Z_Axis.isHomed)
+  if (!Z_Axis.isHomed())
   {
     Z_Axis.home();
   }
-  if (!X_Axis.isHomed)
+  if (!X_Axis.isHomed() && Z_Axis.isHomed())
   {
     X_Axis.home();
   }
-  if (!Y_Axis.isHomed)
+  if (!Y_Axis.isHomed() && Z_Axis.isHomed())
   {
     Y_Axis.home();
   }
 
-  if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.aktiv & !Y_Axis.aktiv & !Z_Axis.aktiv))
+  if (ALLOW_COMMAND_WHEN_AXIS_IS_ACTIVE || (!X_Axis.isActive() & !Y_Axis.isActive() & !Z_Axis.isActive()))
   {
     if (com.recived_value.is_available)
     {
       switch (com.recived_value.command)
       {
       case POSITION:
-        X_Axis.move(com.recived_value.scaled_to_max_axis_pos_as_steps[0]);
-        Y_Axis.move(com.recived_value.scaled_to_max_axis_pos_as_steps[1]);
-        Z_Axis.move(com.recived_value.scaled_to_max_axis_pos_as_steps[2]);
+        X_Axis.moveAbsolute((unsigned long)(com.recived_value.as_int16[0]) * X_Axis.getMaxPosition() / 65535ul);
+        Y_Axis.moveAbsolute((unsigned long)(com.recived_value.as_int16[1]) * X_Axis.getMaxPosition() / 65535ul);
+        Z_Axis.moveAbsolute((unsigned long)(com.recived_value.as_int16[2]) * X_Axis.getMaxPosition() / 65535ul);
         break;
 
       case HOMING_OFFSET:
@@ -108,10 +100,9 @@ void loop()
         break;
 
       case MAX_POSITION:
-        X_Axis.setMaxPosition(com.recived_value.scaled_to_steps[0]);
-        Y_Axis.setMaxPosition(com.recived_value.scaled_to_steps[1]);
-        Z_Axis.setMaxPosition(com.recived_value.scaled_to_steps[2]);
-        com.setMaxPosition(com.recived_value.as_int16[0], com.recived_value.as_int16[1], com.recived_value.as_int16[2]);
+        X_Axis.setMaxPosition(com.recived_value.as_int16[0]);
+        Y_Axis.setMaxPosition(com.recived_value.as_int16[1]);
+        Z_Axis.setMaxPosition(com.recived_value.as_int16[2]);
         break;
 
       case ACCELLERATION:
@@ -121,19 +112,22 @@ void loop()
         break;
 
       case MAX_SPEED:
-        X_Axis.setMaxSpeed(com.recived_value.as_int16[0]);
-        Y_Axis.setMaxSpeed(com.recived_value.as_int16[1]);
-        Z_Axis.setMaxSpeed(com.recived_value.as_int16[2]);
+        X_Axis.setSpeed(com.recived_value.as_int16[0]);
+        Y_Axis.setSpeed(com.recived_value.as_int16[1]);
+        Z_Axis.setSpeed(com.recived_value.as_int16[2]);
         break;
 
       case NEW_HOMING:
-        if(com.recived_value.as_bool[0]){
+        if (com.recived_value.as_bool[0])
+        {
           X_Axis.home();
         }
-        if(com.recived_value.as_bool[1]){
+        if (com.recived_value.as_bool[1])
+        {
           Y_Axis.home();
         }
-        if(com.recived_value.as_bool[2]){
+        if (com.recived_value.as_bool[2])
+        {
           Z_Axis.home();
         }
 
@@ -173,96 +167,20 @@ void loop()
     Z_Axis.lock();
   }
 
-  while (digitalRead(PIN_ENABLE) && !NO_HARDWARE)
+  if (digitalRead(PIN_ENABLE) && !NO_HARDWARE)
   {
-    X_Axis.stopAxis();
-    Y_Axis.stopAxis();
-    Z_Axis.stopAxis();
-  }
-  if (SIMULATION)
-  {
-    if (Serial.available() != 0)
+    while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
     {
-      X_Axis.printStatus();
-
-      int t = Serial.read();
-      Serial.println(t);
-      if (t == 49)
-      {
-        AxisInBearbeitung = 0;
-      } // 1
-      if (t == 50)
-      {
-        AxisInBearbeitung = 1;
-      } // 2
-      if (t == 51)
-      {
-        AxisInBearbeitung = 2;
-      } // 3
-      if (t == 52)
-      {
-        if (AxisInBearbeitung == 0)
-        {
-          X_Axis.move(X_Axis.MaxPosition);
-        }
-        if (AxisInBearbeitung == 1)
-        {
-          Y_Axis.move(Y_Axis.MaxPosition);
-        }
-        if (AxisInBearbeitung == 2)
-        {
-          Z_Axis.move(Z_Axis.MaxPosition);
-        }
-      } // 4
-      if (t == 53)
-      {
-        if (AxisInBearbeitung == 0)
-        {
-          X_Axis.move(0);
-        }
-        if (AxisInBearbeitung == 1)
-        {
-          Y_Axis.move(0);
-        }
-        if (AxisInBearbeitung == 2)
-        {
-          Z_Axis.move(0);
-        }
-      } // 5
-      if (t == 54)
-      {
-        // makeCustomMove();
-      } // 6
-      if (t == 43)
-      {
-        if (AxisInBearbeitung == 0)
-        {
-          X_Axis.move(X_Axis.istPosition + 10 * STEPS_PER_MM);
-        }
-        if (AxisInBearbeitung == 1)
-        {
-          Y_Axis.move(Y_Axis.istPosition + 10 * STEPS_PER_MM);
-        }
-        if (AxisInBearbeitung == 2)
-        {
-          Z_Axis.move(Z_Axis.istPosition + 10 * STEPS_PER_MM);
-        }
-      }
-      if (t == 45)
-      {
-        if (AxisInBearbeitung == 0)
-        {
-          X_Axis.move(X_Axis.istPosition - 10 * STEPS_PER_MM);
-        }
-        if (AxisInBearbeitung == 1)
-        {
-          Y_Axis.move(Y_Axis.istPosition - 10 * STEPS_PER_MM);
-        }
-        if (AxisInBearbeitung == 2)
-        {
-          Z_Axis.move(Z_Axis.istPosition - 10 * STEPS_PER_MM);
-        }
-      }
+      X_Axis.stop();
+      Y_Axis.stop();
+      Z_Axis.stop();
     }
+    Axis::disableStepping();
+  }
+
+  if (!digitalRead(PIN_ENABLE) && !NO_HARDWARE)
+  {
+    beep.doubleBeep();
+    Axis::enableStepping();
   }
 }

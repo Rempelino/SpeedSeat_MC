@@ -1,73 +1,100 @@
 #ifndef AXIS_H
 #define AXIS_H
-#ifndef PROCESSOR_CYCLES_PER_MICROSECOND
-#define PROCESSOR_CYCLES_PER_MICROSECOND 16UL
-#define ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS 4UL
-#define ACCEL_RECALC_PERIOD_IN_PROCESSOR_CYLCES (ACCELERATION_RECALCULATION_PERIOD_IN_MILLISECONDS * 1000UL * PROCESSOR_CYCLES_PER_MICROSECOND)
-#endif
+#define MAX_AMOUNT_OF_AXIS 10
 #include "Arduino.h"
-#include "communication.h"
-#include "configuration.h"
-
-enum movementType
+enum TRACKING_TYPE
 {
-    movementFromZero,
-    movementWithChangeOfDirection,
-    movementExtension
+    _MC_FOCUS_ON_TRACKING,
+    _MC_FOCUS_ON_SMOOTHENESS
 };
 
 class Axis
 {
 private:
+    enum movementType
+    {
+        movementFromZero,
+        movementWithChangeOfDirection,
+        movementExtension
+    };
+
+    enum homingStep
+    {
+        waitForAxisToStop,
+        clearEndstop,
+        driveToEndstop,
+        moveFromEndstopAfterHoming,
+        waitingForEndOfMovement
+    };
+    const bool focusOnTracking;
+    const bool focusOnSmootheness = !focusOnTracking;
+    bool direction = false;
+    volatile bool decelerating;
+    bool toggle;
+    volatile bool changeOfDirection;
+    unsigned tablePosition;
+    unsigned long stepsPerMillimeter = 1;
+    unsigned long istPosition;
+    unsigned long sollPosition;
+    unsigned long maxSpeed;
+    unsigned long acceleration;
+    unsigned long defaultAcceleration;
+    unsigned long defaulMaxSpeed;
+    unsigned long speedWhileHoming;
+    unsigned long accelerationWhileHoming;
+    volatile bool stopping = false;
+    uint8_t step_Bit;
+    volatile uint8_t *step_Port;
+    const int Pin_Step;
     const int Pin_Direction;
     const int Pin_Enable;
-    const int Pin_Trouble;
-    const int Pin_InPosition;
     const int Pin_Endstop;
-    const int Pin_Permission;
-    const unsigned int StepPinNumber;
-    const unsigned short int AxisNomber;
-    unsigned long accelerationPerAccelerationRecalculation;
-    unsigned long maxSpeed;
-    unsigned long DistanzAbbremsenVonMaxSpeed;
-    unsigned long acceleration;
-    unsigned int HomingOffset;
-    bool accelerating;
-    bool deccelerating;
-    bool changeOfDirection;
-    bool timerHasBeenInitialized;
-    volatile bool runningMinSpeed;
-    unsigned long currentSpeed;
-    unsigned long posStartDeccelerating;
-    unsigned long sollPositionNachRichtungswechsel;
-    unsigned long sollPosition;
-    bool currentDirection = true;
-    unsigned int RundungsFehlerProAccellerationCalculation = 1;
-    unsigned int RundungsfehlerSumiert;
-    unsigned long CyclesSinceLastAccelerationCalculation;
-    volatile uint16_t *TimerPeriod;
-    volatile uint8_t *Port;
-    volatile uint8_t *OutputRegister;
-    bool toggle;
-    unsigned int stepPeriodInProcessorCycles = 65535;
-    unsigned long stepsPerMillimeter;
-    bool preventBadHoming = PREVENT_BAD_HOMING;
-    bool killed;
-    unsigned int ErrorID;
-    bool locked = true;
-    bool homingActive = false;
-    bool isInitialzed = false;
-    static unsigned short nextAxisNomber;
+    const int Pin_Trouble;
+    unsigned long maxPosition;
+    unsigned long homingOffset;
+    unsigned timeTillNextExecute;
+    volatile bool active;
+    volatile unsigned long timeTillNextSpeedUpdate;
+    volatile unsigned long sollPositionNachRichtungswechsel;
+    volatile unsigned requiredTimerPeriod;
+    static const unsigned tableSize = 50;
+    unsigned long accelerationRecalculationPeriod;
+    unsigned long lastCommandPosition;
+    unsigned AxisNumber;
+    unsigned int table[tableSize];
+    bool HardwareHasBeenInitialized = false;
+    bool AxisIsLocked = false;
+    bool softwareLimitsEnabled = true;
+    volatile bool movingVelocity = false;
+    volatile bool homingActive = false;
+    volatile bool AxisIsHomed = false;
+    volatile short homingStep = 0;
+    static bool steppingIsEnabled;
     unsigned long EEPROMAdress;
+    bool isInitialized = false;
+    unsigned short ErrorID = 0;
 
-    unsigned long getStopPosition();
-    bool stoppositionLiegtHinterSollposition(unsigned long);
-    enum movementType getMovementType(unsigned long);
+    void calculateSpeedPeriodTable();
+    void writeTable();
     void defaultMove(unsigned long);
-    uint16_t getTimeTillNextStep();
-    void recalculateAccelleration();
-    bool digitalReadAverage(int);
-    void TimerInitialisieren();
+    unsigned long calculateBreakingDistance();
+    enum movementType getMovementType(unsigned long);
+    bool stoppositionLiegtHinterSollposition(unsigned long);
+    unsigned long getStopPosition();
+    unsigned speedToTimerPeriod(unsigned long);
+    void calculateAccelerationRecalculationPeriod();
+    void initializeHardware();
+    void init(int, int);
+    void executeHoming();
+    void setTempSpeed(unsigned long);
+    void resetSpeed();
+    void setTempAcceleration(unsigned long);
+    void resetAcceleration();
+    void commandFinished();
+    void moveAbsoluteInternal(unsigned long);
+    void moveRelativeInternal(unsigned long, bool);
+    void moveVelocityInternal(unsigned long, bool);
+
     void saveData();
     void readData();
     void writeEEPROM(unsigned long);
@@ -76,46 +103,51 @@ private:
     void readEEPROM(unsigned int &);
 
 public:
-    
-    volatile bool aktiv;
-    unsigned long MaxPosition;
-    volatile unsigned long istPosition;
-    bool isHomed;
+    Axis(int Pin_Step, int Pin_Direction, int Pin_Enable, int Pin_Endstop, const int Pin_Trouble, TRACKING_TYPE trackingType);
+    volatile unsigned long positionStartDecelerating;
+    static unsigned durationSinceLastInterrupt;
+    static unsigned TimerPeriod;
+    static unsigned AxisCounter;
+    static void (*ExecutePointer[MAX_AMOUNT_OF_AXIS])();
+    unsigned maximumTablePosition;
+    static unsigned CyclesUsedForInterrupt;
+    static volatile bool analyzeWorkload;
+    static volatile float workload;
 
-    Axis(int pin_Direction,
-         int Pin_Enable,
-         int Pin_Trouble,
-         int Pin_InPosition,
-         int Pin_Endstop,
-         int Pin_Permission,
-         unsigned int StepPinNumber,
-         unsigned long MaxPositionInMillimeter,
-         unsigned long StepsPerMillimeter,
-         unsigned long acceleration,
-         unsigned long maxSpeed,
-         unsigned int HomingOffset,
-         volatile uint16_t *TimerPeriod,
-         volatile uint8_t *Port,
-         volatile uint8_t *OutputRegister);
-
-    void printInputStatus();
-    void dumpAxisParameter();
-    void printStatus();
-    void home();
-    void move(unsigned long);
-    void stopAxis();
-    void startAxis();
-    void newStep();
-    bool hasError();
-    unsigned int getErrorID();
-    int getSomeValue();
+    void execute();
     void lock();
     void unlock();
-    bool isLocked();
-    void setMaxPosition(unsigned long MaxPosition);
-    void setHomingOffset(unsigned long offset);
-    void setAcceleration(unsigned long acceleration);
-    void setMaxSpeed(unsigned long maxSpeed);
+    void moveAbsolute(unsigned long);
+    void moveRelative(unsigned long, bool);
+    void moveVelocity(unsigned long, bool);
+    void stop();
+    void home();
+    unsigned long getIstpositon();
+    unsigned long getSollpositon();
+    unsigned long getSpeed();
+    bool getDirection();
+    bool isRunningMaxSpeed();
+    bool isActive();
+    bool isHomed();
+    bool isDeccelerating();
+    static float getWorkload();
+    static void disableStepping();
+    static void enableStepping();
+    void printIstPosition();
+    void printSollPosition();
+    void printTimerPeriod();
+    void setAcceleration(unsigned long);
+    void setSpeed(unsigned long);
+    void setMaxPosition(unsigned long);
+    void setHomingOffset(unsigned long);
+    unsigned long getMaxPosition();
+    void enableSoftwareLimits();
+    void disableSoftwareLimits();    
+    void setStepsPerMillimeter(unsigned long);
+    bool hasError();
+    unsigned getErrorID();
+
+
 };
 
 #endif

@@ -1,78 +1,75 @@
-#ifndef AXISMOVE_H
-#define AXISMOVE_H
+#include <Arduino.h>
 #include "Axis.h"
-#include "AxisTimer.h"
-#ifndef SIMULATION
-#define SIMULATION false
-#endif
 
-void Axis::move(unsigned long neuePosition)
+// Public Functions
+void Axis::moveAbsolute(unsigned long newPosition)
 {
-    if (!isHomed && !homingActive){
+    if (AxisIsHomed)
+    {
+        moveAbsoluteInternal(newPosition * stepsPerMillimeter);
+    }
+}
+
+void Axis::moveRelative(unsigned long newPosition, bool direction)
+{
+    if (AxisIsHomed)
+    {
+
+        moveRelativeInternal(newPosition * stepsPerMillimeter, direction);
+    }
+}
+
+void Axis::moveVelocity(unsigned long speed, bool direction)
+{
+    if (AxisIsHomed)
+    {
+
+        moveVelocityInternal(speed * stepsPerMillimeter, direction);
+    }
+}
+
+unsigned long speed;
+void Axis::moveAbsoluteInternal(unsigned long newPosition)
+{
+    if (!HardwareHasBeenInitialized)
+    {
+        initializeHardware();
+    }
+    if (!AxisIsLocked)
+    {
         return;
     }
-    if(!timerHasBeenInitialized){
-        TimerInitialisieren();
-        timerHasBeenInitialized = true;
-    }
-    if (MaxPosition < neuePosition)
+    if (newPosition > maxPosition)
     {
-        neuePosition = MaxPosition;
+        newPosition = maxPosition;
     }
-
-    if (SIMULATION)
-    {
-        Serial.println();
-        Serial.println();
-        Serial.println("move() wird ausgeführt-------------------------------------------------");
-        Serial.print("Achse: ");
-        Serial.println(AxisNomber);
-        Serial.print("neuePosition: ");
-        Serial.println(neuePosition / stepsPerMillimeter);
-        Serial.print("istPosition: ");
-        Serial.println(istPosition / stepsPerMillimeter);
-    }
+    lastCommandPosition = newPosition;
+    speed = getSpeed();
     changeOfDirection = false;
-    switch (getMovementType(neuePosition))
+    switch (getMovementType(newPosition))
     {
     case movementFromZero:
-        if (SIMULATION)
+        if (!active)
         {
-            Serial.println("movementType: movementFromZero");
+            tablePosition = 0;
         }
-        defaultMove(neuePosition);
+        defaultMove(newPosition);
         break;
     case movementExtension:
     {
-        if (SIMULATION)
-        {
-            Serial.println("movementType: movementExtension");
-        }
-        unsigned long speedDifferenceToMaxSpeed = maxSpeed - currentSpeed;
+        unsigned long speedDifferenceToMaxSpeed = maxSpeed - speed;
         unsigned long dauerBeschleunigenBisMaxSpeedIn10Millis = speedDifferenceToMaxSpeed * 10000 / acceleration;
-        unsigned long distanzBeschleunigen = (speedDifferenceToMaxSpeed * speedDifferenceToMaxSpeed) / (2 * acceleration) + (dauerBeschleunigenBisMaxSpeedIn10Millis * currentSpeed / 10000);
+        unsigned long distanzBeschleunigen = (speedDifferenceToMaxSpeed * speedDifferenceToMaxSpeed) / (2 * acceleration) + (dauerBeschleunigenBisMaxSpeedIn10Millis * speed / 10000);
         unsigned long distanzAbbremsen = (maxSpeed * maxSpeed) / (2 * acceleration);
         unsigned long theoretischePositionBeimBeschleunigenAufMaxSpeed;
 
-        if (SIMULATION)
-        {
-            Serial.print("speedDifferenceToMaxSpeed ");
-            Serial.println(speedDifferenceToMaxSpeed / stepsPerMillimeter);
-            Serial.print("dauerBeschleunigenBisMaxSpeedIn10Millis ");
-            Serial.println(dauerBeschleunigenBisMaxSpeedIn10Millis);
-            Serial.print("distanzBeschleunigen ");
-            Serial.println(distanzBeschleunigen / stepsPerMillimeter);
-            Serial.print("distanzAbbremsen ");
-            Serial.println(distanzAbbremsen / stepsPerMillimeter);
-        }
-
-        if (currentDirection)
+        if (direction)
         {
             theoretischePositionBeimBeschleunigenAufMaxSpeed = distanzBeschleunigen + distanzAbbremsen + istPosition;
         }
         else
         {
-            if (distanzAbbremsen + istPosition > istPosition)
+            if (distanzBeschleunigen + distanzAbbremsen > istPosition)
             {
                 theoretischePositionBeimBeschleunigenAufMaxSpeed = 0;
             }
@@ -82,16 +79,14 @@ void Axis::move(unsigned long neuePosition)
             }
         }
 
-        if (SIMULATION)
-        {
-            Serial.print("theoretischePositionBeimBeschleunigenAufMaxSpeed ");
-            Serial.println(theoretischePositionBeimBeschleunigenAufMaxSpeed / stepsPerMillimeter);
-        }
-
         bool esWirdAufMaxSpeedBeschleunigt;
-        if (currentDirection)
+        if (isRunningMaxSpeed())
         {
-            if (theoretischePositionBeimBeschleunigenAufMaxSpeed < neuePosition)
+            esWirdAufMaxSpeedBeschleunigt = true;
+        }
+        else if (direction)
+        {
+            if (theoretischePositionBeimBeschleunigenAufMaxSpeed < newPosition)
             {
                 esWirdAufMaxSpeedBeschleunigt = true;
             }
@@ -102,167 +97,194 @@ void Axis::move(unsigned long neuePosition)
         }
         else
         {
-            if (theoretischePositionBeimBeschleunigenAufMaxSpeed > neuePosition)
+            if (theoretischePositionBeimBeschleunigenAufMaxSpeed > newPosition)
             {
                 esWirdAufMaxSpeedBeschleunigt = true;
             }
             else
             {
                 esWirdAufMaxSpeedBeschleunigt = false;
-            }
-        }
-
-        if (SIMULATION)
-        {
-            if (esWirdAufMaxSpeedBeschleunigt)
-            {
-                Serial.println("Es wird auf Max Speed beschleunigt");
-            }
-            else
-            {
-                Serial.println("Es wird nicht auf Max Speed beschleunigt");
             }
         }
 
         if (esWirdAufMaxSpeedBeschleunigt)
         {
-            defaultMove(neuePosition);
+            defaultMove(newPosition);
         }
         else
         {
-            unsigned long Abbremsdistanz = (currentSpeed * currentSpeed) / (2 * acceleration);
-            unsigned long PositionBeimDirektenAbbremsen;
-
-            if (currentDirection)
-            {
-                PositionBeimDirektenAbbremsen = istPosition + Abbremsdistanz;
-            }
-            else
-            {
-                PositionBeimDirektenAbbremsen = istPosition - Abbremsdistanz;
-            }
-            if (SIMULATION)
-            {
-                Serial.print("PositionBeimDirektenAbbremsen: ");
-                Serial.println(PositionBeimDirektenAbbremsen / stepsPerMillimeter);
-            }
+            unsigned long Abbremsdistanz = (speed * speed) / (2 * acceleration);
+            unsigned long PositionBeimDirektenAbbremsen = getStopPosition();
 
             unsigned long DifferenzZurSollPositionWennDirektAbgebremstWird;
-            if (currentDirection)
+            if (direction)
             {
-                DifferenzZurSollPositionWennDirektAbgebremstWird = neuePosition - PositionBeimDirektenAbbremsen;
+                DifferenzZurSollPositionWennDirektAbgebremstWird = newPosition - PositionBeimDirektenAbbremsen;
             }
             else
             {
-                DifferenzZurSollPositionWennDirektAbgebremstWird = PositionBeimDirektenAbbremsen - neuePosition;
+                DifferenzZurSollPositionWennDirektAbgebremstWird = PositionBeimDirektenAbbremsen - newPosition;
             }
 
             unsigned long HaelfteDerDifferenz = DifferenzZurSollPositionWennDirektAbgebremstWird / 2;
-
-            if (currentDirection)
+            if (direction)
             {
-                posStartDeccelerating = neuePosition - Abbremsdistanz - HaelfteDerDifferenz;
+                positionStartDecelerating = newPosition - Abbremsdistanz - HaelfteDerDifferenz;
             }
             else
             {
-                posStartDeccelerating = neuePosition + Abbremsdistanz + HaelfteDerDifferenz;
+                positionStartDecelerating = newPosition + Abbremsdistanz + HaelfteDerDifferenz;
             }
-            if (SIMULATION)
-            {
-                Serial.print("posStartDeccelerating: ");
-                Serial.println(posStartDeccelerating / stepsPerMillimeter);
-            }
-            digitalWrite(Pin_Direction, currentDirection);
-            accelerating = true;
-            deccelerating = false;
-            CyclesSinceLastAccelerationCalculation = 0;
-            sollPosition = neuePosition;
-            startAxis();
-        }
 
+            digitalWrite(Pin_Direction, direction);
+            decelerating = false;
+            sollPosition = newPosition;
+            active = true;
+        }
         break;
     }
     case movementWithChangeOfDirection:
     {
-        if (SIMULATION)
-        {
-            Serial.println("movementType: movementWithChangeOfDirection");
-        }
         sollPosition = getStopPosition();
-        if (SIMULATION)
-        {
-            Serial.print("stopp Position: ");
-            Serial.println(sollPosition / stepsPerMillimeter);
-        }
-        accelerating = false;
-        deccelerating = true;
+        decelerating = true;
         changeOfDirection = true;
-        sollPositionNachRichtungswechsel = neuePosition;
-
-        // if (!AxisL -> aktiv){
-        //   startAxis(AxisNomber);
-        //}
-
-        if (SIMULATION)
-        {
-            Serial.print("sollPositionNachRichtungswechsel: ");
-            Serial.println(neuePosition / stepsPerMillimeter);
-        }
-
+        sollPositionNachRichtungswechsel = newPosition;
         break;
     }
     default:
     {
-        if (SIMULATION)
-        {
-            Serial.println("movementType: garnichts????");
-        }
         break;
     }
     }
-
-    // interrupts();
-    if (SIMULATION)
-    {
-        // Serial.println("Interrupts wurden gestartet");
-    }
 }
 
-
-unsigned long Axis::getStopPosition()
+void Axis::moveRelativeInternal(unsigned long newPosition, bool direction)
 {
-    if (currentDirection)
+    if (!HardwareHasBeenInitialized)
     {
-        return istPosition + ((currentSpeed * currentSpeed) / (2 * acceleration));
+        initializeHardware();
+    }
+    if (direction)
+    {
+        moveAbsoluteInternal(istPosition + newPosition);
     }
     else
     {
-        return istPosition - ((currentSpeed * currentSpeed) / (2 * acceleration));
+        if (newPosition < istPosition || !softwareLimitsEnabled)
+        {
+            moveAbsoluteInternal(istPosition - newPosition);
+        }
+        else
+        {
+            moveAbsoluteInternal(0);
+        }
     }
 }
 
-bool Axis::stoppositionLiegtHinterSollposition(unsigned long neuePosition)
+void Axis::moveVelocityInternal(unsigned long speed, bool direction)
 {
-    unsigned long stopPosition = getStopPosition();
-    if (currentDirection)
+    if (!HardwareHasBeenInitialized)
     {
-        return (stopPosition > neuePosition);
+        initializeHardware();
+    }
+
+    unsigned currentTimerPeriod;
+    if (active)
+    {
+        currentTimerPeriod = table[tablePosition];
+    }
+
+    setTempSpeed(speed);
+    if (active)
+    {
+        unsigned i;
+        for (i = 0; i < tableSize; i++)
+        {
+            if (table[i] < currentTimerPeriod)
+            {
+                break;
+            }
+            tablePosition = i;
+        }
+    }
+    this->direction = direction;
+    movingVelocity = true;
+    decelerating = false;
+    digitalWrite(Pin_Direction, direction);
+    active = true;
+}
+
+void Axis::stop()
+{
+    if (active)
+    {
+        movingVelocity = false;
+        stopping = true;
+        decelerating = true;
+    }
+}
+
+// defaultMove -> Bewegungsablauf von null oder in gleicher richtung wenn maximale geschwindigkeit erreicht wird. Der Motor wird gestartet und "positionStartDecelerating"
+// wird auf die Abbremsdistanz von Max Speed gesetzt
+void Axis::defaultMove(unsigned long newPosition)
+{
+    if (newPosition == sollPosition)
+    {
+        return;
+    }
+    unsigned long breakingDistance = calculateBreakingDistance();
+    direction = newPosition > istPosition;
+    unsigned long distanz;
+    if (direction)
+    {
+        distanz = newPosition - istPosition;
     }
     else
     {
-        return (stopPosition < neuePosition);
+        distanz = istPosition - newPosition;
     }
+
+    if (breakingDistance > distanz / 2)
+    {
+        if (!active)
+        {
+            breakingDistance = distanz / 2;
+        }
+        else
+        {
+            unsigned long breakingDistanceFromCurrentSpeed = (speed * speed) / (2 * acceleration);
+            double distanceAccellerating = (double)((distanz - breakingDistanceFromCurrentSpeed) / 2);
+            // v = a * SQRT((2*s)/a)
+            unsigned long speedDifferenceFromAccelerating = (unsigned long)((double)(acceleration)*sqrt(2 * distanceAccellerating / (double)(acceleration)));
+            if (speedDifferenceFromAccelerating + speed < maxSpeed)
+            {
+                breakingDistance = breakingDistanceFromCurrentSpeed + (unsigned long)(distanceAccellerating);
+            }
+        }
+    }
+    if (direction)
+    {
+        positionStartDecelerating = newPosition - breakingDistance;
+    }
+    else
+    {
+        positionStartDecelerating = newPosition + breakingDistance;
+    }
+    digitalWrite(Pin_Direction, direction);
+    decelerating = false;
+    sollPosition = newPosition;
+    active = true;
 }
 
-enum movementType Axis::getMovementType(unsigned long neuePosition)
+enum Axis::movementType Axis::getMovementType(unsigned long newPosition)
 {
-    if (aktiv & ((currentDirection & (istPosition > neuePosition)) || (!currentDirection & (istPosition < neuePosition))))
+    if (active & ((direction & (istPosition > newPosition)) || (!direction & (istPosition < newPosition))))
     {
         return movementWithChangeOfDirection;
     }
-    else if (aktiv & ((currentDirection & (istPosition < neuePosition)) || (!currentDirection & (istPosition > neuePosition))))
+    else if (active & ((direction & (istPosition < newPosition)) || (!direction & (istPosition > newPosition))))
     {
-        if (stoppositionLiegtHinterSollposition(neuePosition))
+        if (stoppositionLiegtHinterSollposition(newPosition))
         {
             return movementWithChangeOfDirection;
         }
@@ -276,78 +298,29 @@ enum movementType Axis::getMovementType(unsigned long neuePosition)
         return movementFromZero;
     }
 }
-// defaultMove -> Bewegungsablauf von null oder in gleicher richtung wenn maximale geschwindigkeit erreicht wird. Der Motor wird gestartet und "posStartDeccelerating"
-// wird auf die Abbremsdistanz von Max Speed gesetzt
-void Axis::defaultMove(unsigned long neuePosition)
-{
-    if (SIMULATION)
-    {
-        Serial.println("defaultMove() wird ausgeführt");
-    }
-    if (istPosition != neuePosition)
-    {
-        unsigned long distanzAbbremsen = DistanzAbbremsenVonMaxSpeed;
-        if (SIMULATION)
-        {
-            Serial.print("distanzAbbremsen ->");
-            Serial.println(distanzAbbremsen / stepsPerMillimeter);
-        }
-        currentDirection = neuePosition > istPosition;
-        unsigned long distanz;
-        if (currentDirection)
-        {
-            distanz = neuePosition - istPosition;
-        }
-        else
-        {
-            distanz = istPosition - neuePosition;
-        }
-        if (distanzAbbremsen > distanz / 2)
-        {
-            distanzAbbremsen = distanz / 2;
-            if (SIMULATION)
-            {
-                Serial.println("not reaching full speed -> recalculating");
-                Serial.print("distanzAbbremsen ->");
-                Serial.println(distanzAbbremsen / stepsPerMillimeter);
-            }
-        }
-        if (currentDirection)
-        {
-            posStartDeccelerating = neuePosition - distanzAbbremsen;
-        }
-        else
-        {
-            posStartDeccelerating = neuePosition + distanzAbbremsen;
-        }
-        digitalWrite(Pin_Direction, currentDirection);
-        if (SIMULATION)
-        {
-            Serial.print("Pin Direction: ");
-            Serial.println(Pin_Direction);
-            if (currentDirection)
-            {
-                Serial.println("Drehrichtung Forwährts");
-            }
-            else
-            {
-                Serial.println("Drehrichtung Rückwährts");
-            }
-        }
 
-        accelerating = true;
-        deccelerating = false;
-        aktiv = true;
-        //millisLastCycle = millis();
-        CyclesSinceLastAccelerationCalculation = 0;
-        sollPosition = neuePosition;
-        startAxis();
-        if (SIMULATION)
-        {
-            Serial.print("posStartDeccelerating ->");
-            Serial.println(posStartDeccelerating / stepsPerMillimeter);
-        }
+bool Axis::stoppositionLiegtHinterSollposition(unsigned long newPosition)
+{
+    unsigned long stopPosition = getStopPosition();
+    if (direction)
+    {
+        return (stopPosition > newPosition);
+    }
+    else
+    {
+        return (stopPosition < newPosition);
     }
 }
 
-#endif
+unsigned long Axis::getStopPosition()
+{
+    unsigned long speed = getSpeed();
+    if (direction)
+    {
+        return istPosition + ((speed * speed) / (2 * acceleration));
+    }
+    else
+    {
+        return istPosition - ((speed * speed) / (2 * acceleration));
+    }
+}
