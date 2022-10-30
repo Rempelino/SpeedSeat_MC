@@ -44,7 +44,7 @@
                     "default": 0
                 },
                 "value2": {
-                    "label": "???",
+                    "label": "wokload of motion cernel %",
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
