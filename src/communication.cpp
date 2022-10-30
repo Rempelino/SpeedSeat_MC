@@ -6,46 +6,57 @@ communication::communication()
     {
         request_buffer[i] = IDLE;
     }
-    request = IDLE;
 }
 
 void communication::execute()
 {
-    // communication is in IDLE and a Value request has been set
-    if ((request_buffer[0] != IDLE) & (Serial.available() == 0) & !waiting_for_okay)
+    while (Serial.available() != 0)
     {
-        sendValueRequest();
-        waiting_for_okay = true;
+        addDataToRecivedBuffer();
     }
 
     // waiting for acknowledgement of previous send command
-    if (waiting_for_okay & ((Serial.available() == 1) || (Serial.available() == PROTOCOL_LENGTH + 1)))
+    if (waiting_for_okay & (bytesRecived == 1) || (bytesRecived == PROTOCOL_LENGTH + 1))
     {
-        if (Serial.read() == 255)
+        //check if first or last byte is OKAY
+        if (recived_buffer[0] == 255 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 255))
         {
             waiting_for_okay = false;
+            valuesHavBeenFilled = false;
             int x = 0;
             while (request_buffer[x] != IDLE)
             {
                 request_buffer[x] = request_buffer[x + 1];
                 x++;
             }
+            if (bytesRecived == 1)
+            {
+                bytesRecived = 0;
+            }
+            else
+            {
+                bytesRecived--;
+                for (int i = 0; i < PROTOCOL_LENGTH; i++)
+                {
+                    recived_buffer[1] = recived_buffer[i + 1];
+                }
+            }
         }
-        else
+        else if(recived_buffer[0] == 245 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 245))
         {
-            acknowledge(NO_ANSWER);
             sendBuffer();
         }
     }
 
     // sending Value of requested command
-    if (!waiting_for_okay & (request != IDLE))
+    if (!waiting_for_okay && bytesRecived == 0 && request_buffer[0] != IDLE && valuesHavBeenFilled)
     {
-        sendAnswer();
+        sendValue(request_buffer[0], valuesToSend[0], valuesToSend[1], valuesToSend[2]);
     }
 
     // reading new command
-    if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && request == IDLE && !recived_value.is_available)
+    // if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && !recived_value.is_available)
+    if (bytesRecived == PROTOCOL_LENGTH && !recived_value.is_available)
     {
         readNewCommand();
     }
@@ -59,20 +70,50 @@ void communication::execute()
         }
     }
 
-    // buffer pverflow -> reseting communication
-    if ((Serial.available() > PROTOCOL_LENGTH + (int)(waiting_for_okay)))
+    // buffer overflow -> reseting communication
+    if ((bytesRecived > PROTOCOL_LENGTH + (int)(waiting_for_okay)))
     {
-        acknowledge(NOT_OKAY);
+        acknowledge(NOT_OKAY, 1);
     }
+
+    // timeout in normal operation -> incomplete protocoll has been send
+    if (bytesRecived != 0 && TIMEOUT_ACTIVE)
+    {
+
+        if (millis() - millisSinceBufferWasEmpty > TIMEOUT)
+        {
+            acknowledge(NOT_OKAY, 2);
+        }
+    }
+    else
+    {
+        millisSinceBufferWasEmpty = millis();
+    }
+
+    // TOBI you might comment to stop spam
+    // send status when communication is not busy
+    if (bytesRecived == 0)
+    {
+        if (millis() - millisSinceBufferWasNotEmpty > 1000)
+        {
+            //addCommandToRequestLine(POSITION);
+            //addCommandToRequestLine(HOMING_STATUS);
+            millisSinceBufferWasNotEmpty = millis(); //TOBI delete this line to create maximum SPAM
+        }
+    }
+    else
+    {
+        millisSinceBufferWasNotEmpty = millis();
+    }
+    //-----------------------------
 }
 
 void communication::acknowledge(ANSWER answer)
 {
 
-    while (Serial.available() > 0)
-    {
-        Serial.read();
-    }
+    bytesRecived = 0;
+    millisSinceBufferWasEmpty = millis();
+    millisSinceBufferWasNotEmpty = millis();
     switch (answer)
     {
     case OKAY:
@@ -90,15 +131,38 @@ void communication::acknowledge(ANSWER answer)
     }
 }
 
-bool communication::verifyData(unsigned short buffer[PROTOCOL_LENGTH])
+void communication::acknowledge(ANSWER answer, int offset)
+{
+
+    bytesRecived = 0;
+    millisSinceBufferWasEmpty = millis();
+    millisSinceBufferWasNotEmpty = millis();
+    switch (answer)
+    {
+    case OKAY:
+        Serial.write(255);
+        Serial.flush();
+        break;
+
+    case NOT_OKAY:
+        Serial.write(254 - offset);
+        Serial.flush();
+        break;
+
+    default:
+        break;
+    }
+}
+
+bool communication::verifyData()
 {
     byte veryfyingResult = 0;
     int x;
     for (x = 0; x != PROTOCOL_LENGTH - 1; ++x)
     {
-        veryfyingResult = veryfyingResult xor buffer[x];
+        veryfyingResult = veryfyingResult xor recived_buffer[x];
     }
-    if (veryfyingResult == buffer[PROTOCOL_LENGTH - 1])
+    if (veryfyingResult == recived_buffer[PROTOCOL_LENGTH - 1])
     {
         return true;
     }
@@ -110,22 +174,22 @@ bool communication::verifyData(unsigned short buffer[PROTOCOL_LENGTH])
 
 void communication::readNewCommand()
 {
-    unsigned short recivedData[PROTOCOL_LENGTH];
-    int i;
-    for (i = 0; i < PROTOCOL_LENGTH; i++)
+    if (!verifyData())
     {
-        recivedData[i] = Serial.read();
-    }
+        for (int i = 0; i < PROTOCOL_LENGTH; i++)
+        {
+            Serial.write(recived_buffer[i]);
+            Serial.flush();
+        }
 
-    if (!verifyData(recivedData))
-    {
-        acknowledge(NOT_OKAY);
+        acknowledge(NOT_OKAY, 3);
         return;
     }
 
     bool successfulExecuted;
-    CMD command = (CMD)(recivedData[0] / 2);
-    bool reading = (bool)(recivedData[0] % 2);
+    CMD command = (CMD)(recived_buffer[0] / 2);
+    bool reading = (bool)(recived_buffer[0] % 2);
+
     switch (command)
     {
     case POSITION:
@@ -139,21 +203,25 @@ void communication::readNewCommand()
     case HOMING_ACCELERATION:
         if (reading)
         {
-            request = command;
+            addCommandToRequestLine(command);
         }
         else
         {
-            recived_value.as_int16[0] = recivedData[1] * 256 + recivedData[2];
-            // recived_value.as_int16[0] = buffer[1] << 8 + buffer[2];
-            recived_value.as_int16[1] = recivedData[3] * 256 + recivedData[4];
-            recived_value.as_int16[2] = recivedData[5] * 256 + recivedData[6];
-            recived_value.as_bool[0] = (bool)(recivedData)[1];
-            recived_value.as_bool[1] = (bool)(recivedData)[3];
-            recived_value.as_bool[2] = (bool)(recivedData)[5];
+            recived_value.as_int16[0] = recived_buffer[1] * 256 + recived_buffer[2];
+            recived_value.as_int16[1] = recived_buffer[3] * 256 + recived_buffer[4];
+            recived_value.as_int16[2] = recived_buffer[5] * 256 + recived_buffer[6];
+            recived_value.as_bool[0] = (bool)(recived_buffer)[1];
+            recived_value.as_bool[1] = (bool)(recived_buffer)[3];
+            recived_value.as_bool[2] = (bool)(recived_buffer)[5];
             recived_value.command = command;
             recived_value.is_available = true;
-            successfulExecuted = true;
         }
+        successfulExecuted = true;
+        break;
+
+    case INIT_REQUEST:
+        addAllCommandsToRequestLine();
+        successfulExecuted = true;
         break;
 
     default:
@@ -164,14 +232,15 @@ void communication::readNewCommand()
     if (successfulExecuted)
     {
         acknowledge(OKAY);
-        if (reading)
+        ringCounter++;
+        if (ringCounter == 0)
         {
-            sendAnswer();
+            calculateCycleTime();
         }
     }
     else
     {
-        acknowledge(NOT_OKAY);
+        acknowledge(NOT_OKAY, 4);
     }
 }
 
@@ -205,51 +274,23 @@ void communication::sendBuffer()
         Serial.write(buffer[i]);
         Serial.flush();
     }
-    millisAtLastSendMessage = millis();
-}
+    waiting_for_okay = true;
 
-void communication::sendAnswer()
-{
-}
-
-void communication::sendValueRequest()
-{
-    unsigned short commandByte = (unsigned short)(request_buffer[0]);
-    commandByte = commandByte * 2 + 1;
-    memset(buffer, 0, sizeof buffer);
-    buffer[0] = commandByte;
-    sendBuffer();
-}
-
-void communication::setNextValue()
-{
-}
-
-void communication::get_value(CMD requestedValue)
-{
-    int x = 0;
-    while (true)
+    // DELETE THIS TO STOP IGNORING TOBIS BUGS
+    if (buffer[0] == 4)
     {
-        if (request_buffer[x] == IDLE)
+        waiting_for_okay = false;
+        valuesHavBeenFilled = false;
+        int x = 0;
+        while (request_buffer[x] != IDLE)
         {
-            request_buffer[x] = requestedValue;
-            return;
+            request_buffer[x] = request_buffer[x + 1];
+            x++;
         }
-        if (request_buffer[x] == requestedValue)
-        {
-            return;
-        }
-        x++;
+        delay(500);
     }
-}
-
-void communication::sendInitFinishedCommand()
-{
-    unsigned short commandByte = 0x02;
-    memset(buffer, 0, sizeof buffer);
-    buffer[0] = commandByte;
-    buffer[PROTOCOL_LENGTH - 1] = commandByte;
-    sendBuffer();
+    //------------------------------------
+    millisAtLastSendMessage = millis();
 }
 
 void communication::sendValue(CMD command, unsigned value1, unsigned value2, unsigned value3)
@@ -257,11 +298,87 @@ void communication::sendValue(CMD command, unsigned value1, unsigned value2, uns
     unsigned short commandByte = (unsigned short)(command);
     commandByte = commandByte * 2;
     memset(buffer, 0, sizeof buffer);
-    buffer[1] = 0;
-    buffer[2] = 100;
-    buffer[3] = 0;
-    buffer[4] = 200;
-    buffer[5] = 0;
-    buffer[6] = 220;
+    buffer[0] = commandByte;
+    buffer[1] = value1 >> 8;
+    buffer[2] = value1;
+    buffer[3] = value2 >> 8;
+    buffer[4] = value2;
+    buffer[5] = value3 >> 8;
+    buffer[6] = value3;
     sendBuffer();
+}
+
+void communication::addAllCommandsToRequestLine()
+{
+    addCommandToRequestLine(POSITION);
+    addCommandToRequestLine(MAX_POSITION);
+    addCommandToRequestLine(HOMING_OFFSET);
+    addCommandToRequestLine(ACCELLERATION);
+    addCommandToRequestLine(MAX_SPEED);
+    addCommandToRequestLine(HOMING_SPEED);
+    addCommandToRequestLine(HOMING_STATUS);
+    addCommandToRequestLine(HOMING_ACCELERATION);
+    addCommandToRequestLine(FPS);
+    addCommandToRequestLine(INIT_SUCCESSFUL);
+}
+
+void communication::addCommandToRequestLine(CMD command)
+{
+    for (int i = 0; i < REQUEST_BUFFER_LENGTH; i++)
+    {
+        if (request_buffer[i] == command)
+        {
+            return;
+        }
+        if (request_buffer[i] == IDLE)
+        {
+            request_buffer[i] = command;
+            return;
+        }
+    }
+}
+
+CMD communication::getRequestedValue()
+{
+    return request_buffer[0];
+}
+
+void communication::fillValueBuffer(unsigned Value1, unsigned Value2, unsigned Value3)
+{
+    if (getRequestedValue() == IDLE)
+    {
+        return;
+    }
+    if (valuesHavBeenFilled)
+    {
+        return;
+    }
+    valuesToSend[0] = Value1;
+    valuesToSend[1] = Value2;
+    valuesToSend[2] = Value3;
+    valuesHavBeenFilled = true;
+}
+
+void communication::calculateCycleTime()
+{
+    double timeFor256Commands = millis() - cycleTime;
+    cycleTime = millis();
+
+    if (timeFor256Commands == 0)
+    {
+        return;
+    }
+    fps = (unsigned)(256.0 / (timeFor256Commands / 1000.0));
+    addCommandToRequestLine(FPS);
+}
+
+void communication::addDataToRecivedBuffer()
+{
+    if (bytesRecived == PROTOCOL_LENGTH + 1)
+    {
+        acknowledge(NOT_OKAY, 6);
+        return;
+    }
+    recived_buffer[bytesRecived] = Serial.read();
+    bytesRecived++;
 }

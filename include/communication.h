@@ -14,21 +14,28 @@
 #define TIMEOUT_ACTIVE true
 #endif
 
+#ifndef REQUEST_BUFFER_LENGTH
+#define REQUEST_BUFFER_LENGTH 100
+#endif
+
 #ifndef STRUCT_CMD
 #define STRUCT_CMD
 enum CMD
 {
     POSITION = 0,
-    MAX_POSITION = 1,
-    HOMING_OFFSET = 2,
-    ACCELLERATION = 3,
-    MAX_SPEED = 4,
-    HOMING_STATUS = 5,
-    NEW_HOMING = 6,
-    HOMING_SPEED = 7,
-    HOMING_ACCELERATION = 8,
+    INIT_REQUEST = 1,
+    INIT_SUCCESSFUL = 2,
+    MAX_POSITION = 3,
+    HOMING_OFFSET = 4,
+    ACCELLERATION = 5,
+    MAX_SPEED = 6,
+    HOMING_STATUS = 7,
+    NEW_HOMING = 8,
+    HOMING_SPEED = 9,
+    HOMING_ACCELERATION = 10,
+    FPS = 11,
 
-    IDLE = 9
+    IDLE = 999
 };
 #endif
 enum ANSWER
@@ -49,27 +56,45 @@ struct AvailableInfos
 class communication
 {
     unsigned short buffer[PROTOCOL_LENGTH];
+    unsigned short recived_buffer[PROTOCOL_LENGTH + 1];
+    int bytesRecived;
     unsigned long millisAtLastSendMessage;
+    unsigned long millisSinceBufferWasEmpty;
+    unsigned long millisSinceBufferWasNotEmpty;
     unsigned long steps_per_millimeter;
     unsigned long axis_max_position_as_steps[3];
+
+    unsigned long cycleTime;
+    uint8_t ringCounter;
+
     bool waiting_for_okay;
-    CMD request;
-    CMD request_buffer[100];
-    bool verifyData(unsigned short buffer[PROTOCOL_LENGTH]);
+    bool valuesHavBeenFilled = false;
+    bool hasBeendInitialized = false;
+    unsigned valuesToSend[3];
+
+    const int requestBufferLength = 100;
+    CMD request_buffer[REQUEST_BUFFER_LENGTH];
+    bool verifyData();
     void readNewCommand();
     void unsignedLongToTwoBytes(unsigned long, unsigned long, byte *, byte *);
     void sendBuffer();
     void sendAnswer();
     void sendValueRequest();
     void setNextValue();
+    void addCommandToRequestLine(CMD);
+    void addAllCommandsToRequestLine();
+    void calculateCycleTime();
+    void addDataToRecivedBuffer();
 
 public:
-    void acknowledge(ANSWER);
+    void acknowledge(ANSWER);void acknowledge(ANSWER, int);
     void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
     communication();
     void get_value(CMD);
     void execute();
-    void sendInitFinishedCommand();
+    void fillValueBuffer(unsigned Value1, unsigned Value2, unsigned Value3);
+    unsigned fps;
+    CMD getRequestedValue();
     unsigned long TwoBytesToSteps(byte, byte, unsigned long);
     AvailableInfos recived_value;
     CMD available_command;

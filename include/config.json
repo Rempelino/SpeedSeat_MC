@@ -1,0 +1,248 @@
+{
+    "config": {
+        "connectionResponseTimeoutMs": 5000,
+        "commands": [
+            {
+                "groupLabel": "Motor-Positions",
+                "id": 0,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Max Motor-Positions",
+                "id": 3,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 300,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 300,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 300,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Homing Offset",
+                "id": 4,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 100,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 100,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 100,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Acceleration",
+                "id": 5,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 1500,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 1500,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 1500,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Max Speed",
+                "id": 6,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Homing Status",
+                "id": 7,
+                "readonly": true,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "boolean",
+                    "default": 1
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "boolean",
+                    "default": 1
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "boolean",
+                    "default": 1
+                }
+            },
+            {
+                "groupLabel": "New Homing",
+                "id": 8,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "action"
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "boolean"
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "boolean"
+                }
+            },
+            {
+                "groupLabel": "Homing Speed",
+                "id": 9,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                }
+            },
+
+            {
+                "groupLabel": "Homing Acceleration",
+                "id": 10,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 20,
+                    "max": 500,
+                    "default": 0.5
+                }
+            }
+        ]
+    }
+}

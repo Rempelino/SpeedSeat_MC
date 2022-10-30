@@ -1,5 +1,5 @@
 #include "Axis.h"
-
+#include "Arduino.h"
 ISR(TIMER3_COMPA_vect)
 {
     Axis::durationSinceLastInterrupt = Axis::TimerPeriod;

@@ -5,6 +5,8 @@
 #include "AxisStepping.h"
 #include "AxisEEPROM.h"
 
+
+
 unsigned Axis::AxisCounter = 0;
 unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
@@ -30,9 +32,34 @@ unsigned long Axis::getSollpositon()
     return lastCommandPosition / stepsPerMillimeter;
 }
 
+unsigned long Axis::getHomingOffset()
+{
+    return homingOffset / stepsPerMillimeter;
+}
+
+unsigned long Axis::getAcceleration()
+{
+    return defaultAcceleration / stepsPerMillimeter;
+}
+
+unsigned long Axis::getMaxSpeed()
+{
+    return defaulMaxSpeed / stepsPerMillimeter;
+}
+
 unsigned long Axis::getSpeed()
 {
-    return 1000000 / (table[tablePosition] / 16ul) / stepsPerMillimeter;
+    return F_CPU / table[tablePosition];
+}
+
+unsigned long Axis::getHomingSpeed()
+{
+    return speedWhileHoming / stepsPerMillimeter;
+}
+
+unsigned long Axis::getHomingAcceleration()
+{
+    return accelerationWhileHoming / stepsPerMillimeter;
 }
 
 bool Axis::isActive()
@@ -149,6 +176,22 @@ void Axis::printSollPosition()
     Serial.print(",");
 }
 
+void Axis::printMaxPosition()
+{
+    Serial.print(AxisNumber);
+    Serial.print("_Max:");
+    Serial.print(getMaxPosition());
+    Serial.print(",");
+}
+
+void Axis::printPositionDeccelerating()
+{
+    Serial.print(AxisNumber);
+    Serial.print("_PosDec:");
+    Serial.print(positionStartDecelerating / stepsPerMillimeter);
+    Serial.print(",");
+}
+
 float Axis::getWorkload()
 {
     Axis::analyzeWorkload = true;
@@ -185,6 +228,18 @@ void Axis::setAcceleration(unsigned long acceleration)
     this->defaultAcceleration = this->acceleration;
     saveData();
     writeTable();
+}
+
+void Axis::setHomingSpeed(unsigned long speed)
+{
+    this->speedWhileHoming = speed * stepsPerMillimeter;
+    saveData();
+}
+
+void Axis::setHomingAcceleration(unsigned long acceleration)
+{
+    this->accelerationWhileHoming = acceleration * stepsPerMillimeter;
+    saveData();
 }
 
 void Axis::setTempSpeed(unsigned long speed)
@@ -260,7 +315,9 @@ void Axis::setMaxPosition(unsigned long MaxPosition)
         if (isInitialized)
         {   
             saveData();
-            moveAbsoluteInternal(newPosition);
+            if (AxisIsHomed){
+                moveAbsoluteInternal(newPosition);
+            }
         }
     }
 }

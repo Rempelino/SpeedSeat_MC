@@ -15,6 +15,8 @@ void Axis::saveData()
     writeEEPROM(homingOffset);
     writeEEPROM(acceleration);
     writeEEPROM(maxSpeed);
+    writeEEPROM(speedWhileHoming);
+    writeEEPROM(accelerationWhileHoming);
 }
 
 void Axis::readData()
@@ -24,6 +26,9 @@ void Axis::readData()
     readEEPROM(homingOffset);
     readEEPROM(acceleration);
     readEEPROM(maxSpeed);
+    readEEPROM(speedWhileHoming);
+    readEEPROM(accelerationWhileHoming);
+
 }
 
 void Axis::writeEEPROM(unsigned long data)

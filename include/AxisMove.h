@@ -136,6 +136,15 @@ void Axis::moveAbsoluteInternal(unsigned long newPosition)
                 positionStartDecelerating = newPosition + Abbremsdistanz + HaelfteDerDifferenz;
             }
 
+            if (positionStartDecelerating > 300 * 40)
+            {
+                Serial.println();
+                Serial.println(positionStartDecelerating);
+                Serial.println();
+                while (1)
+                {
+                }
+            }
             digitalWrite(Pin_Direction, direction);
             decelerating = false;
             sollPosition = newPosition;
@@ -270,6 +279,7 @@ void Axis::defaultMove(unsigned long newPosition)
     {
         positionStartDecelerating = newPosition + breakingDistance;
     }
+
     digitalWrite(Pin_Direction, direction);
     decelerating = false;
     sollPosition = newPosition;
@@ -315,12 +325,21 @@ bool Axis::stoppositionLiegtHinterSollposition(unsigned long newPosition)
 unsigned long Axis::getStopPosition()
 {
     unsigned long speed = getSpeed();
+    unsigned long pos;
     if (direction)
     {
         return istPosition + ((speed * speed) / (2 * acceleration));
     }
     else
     {
-        return istPosition - ((speed * speed) / (2 * acceleration));
+        pos = istPosition - ((speed * speed) / (2 * acceleration));
+        if (pos > istPosition)
+        {
+            return 0;
+        }
+        else
+        {
+            return pos;
+        }
     }
 }

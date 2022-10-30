@@ -57,7 +57,7 @@ private:
     volatile unsigned long timeTillNextSpeedUpdate;
     volatile unsigned long sollPositionNachRichtungswechsel;
     volatile unsigned requiredTimerPeriod;
-    static const unsigned tableSize = 50;
+    static const unsigned tableSize = 200;
     unsigned long accelerationRecalculationPeriod;
     unsigned long lastCommandPosition;
     unsigned AxisNumber;
@@ -67,7 +67,7 @@ private:
     bool softwareLimitsEnabled = true;
     volatile bool movingVelocity = false;
     volatile bool homingActive = false;
-    volatile bool AxisIsHomed = false;
+    volatile bool AxisIsHomed = true;
     volatile short homingStep = 0;
     static bool steppingIsEnabled;
     unsigned long EEPROMAdress;
@@ -91,9 +91,10 @@ private:
     void setTempAcceleration(unsigned long);
     void resetAcceleration();
     void commandFinished();
-    void moveAbsoluteInternal(unsigned long);
     void moveRelativeInternal(unsigned long, bool);
     void moveVelocityInternal(unsigned long, bool);
+    unsigned long getSpeed();
+
 
     void saveData();
     void readData();
@@ -114,6 +115,8 @@ public:
     static volatile bool analyzeWorkload;
     static volatile float workload;
 
+    void moveAbsoluteInternal(unsigned long);
+
     void execute();
     void lock();
     void unlock();
@@ -124,7 +127,12 @@ public:
     void home();
     unsigned long getIstpositon();
     unsigned long getSollpositon();
-    unsigned long getSpeed();
+    unsigned long getHomingOffset();
+    unsigned long getAcceleration();
+    unsigned long getHomingSpeed();
+    unsigned long getHomingAcceleration();
+    unsigned long getMaxSpeed();
+    
     bool getDirection();
     bool isRunningMaxSpeed();
     bool isActive();
@@ -135,19 +143,21 @@ public:
     static void enableStepping();
     void printIstPosition();
     void printSollPosition();
+    void printMaxPosition();
+    void printPositionDeccelerating();
     void printTimerPeriod();
     void setAcceleration(unsigned long);
     void setSpeed(unsigned long);
     void setMaxPosition(unsigned long);
     void setHomingOffset(unsigned long);
+    void setHomingSpeed(unsigned long);
+    void setHomingAcceleration(unsigned long);
     unsigned long getMaxPosition();
     void enableSoftwareLimits();
-    void disableSoftwareLimits();    
+    void disableSoftwareLimits();
     void setStepsPerMillimeter(unsigned long);
     bool hasError();
     unsigned getErrorID();
-
-
 };
 
 #endif
