@@ -96,8 +96,8 @@ void communication::execute()
     {
         if (millis() - millisSinceBufferWasNotEmpty > 1000)
         {
-            //addCommandToRequestLine(POSITION);
-            //addCommandToRequestLine(HOMING_STATUS);
+            addCommandToRequestLine(POSITION);
+            addCommandToRequestLine(HOMING_STATUS);
             millisSinceBufferWasNotEmpty = millis(); //TOBI delete this line to create maximum SPAM
         }
     }
