@@ -53,4 +53,5 @@ void Axis::initializeHardware()
     TCCR3B |= (1 << CS10);   // no prescaler 16 = 1 microsekunde @16Mhz Processor
     TIMSK3 |= (1 << OCIE1A); // enable timer compare interrupt
     HardwareHasBeenInitialized = true;
+    SteppingIsEnabled = true;
 }

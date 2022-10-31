@@ -110,14 +110,7 @@ void loop()
         break;
 
       case FPS:
-        if (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
-        {
-          com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
-        }
-        else
-        {
-          com.fillValueBuffer(com.fps, 0, 0);
-        }
+        com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
         break;
 
       case INIT_SUCCESSFUL:
@@ -246,7 +239,7 @@ void loop()
     Z_Axis.lock();
   }
 
-  if (digitalRead(PIN_ENABLE))
+  if (digitalRead(PIN_ENABLE) && Axis::steppingIsEnabled())
   {
     while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
     {
@@ -255,66 +248,68 @@ void loop()
       Z_Axis.stop();
     }
     Axis::disableStepping();
+    beep.doubleBeep();
   }
 
-  if (!digitalRead(PIN_ENABLE))
+  if (!digitalRead(PIN_ENABLE) && !Axis::steppingIsEnabled())
   {
     beep.doubleBeep();
     Axis::enableStepping();
   }
 }
 
-void analyzeMotionCernel(){
+void analyzeMotionCernel()
+{
   unsigned long myMillis = millis();
 
-    if (myMillis - timeStamp > intervall)
+  if (myMillis - timeStamp > intervall)
+  {
+    X_Axis.printIstPosition();
+    X_Axis.printSollPosition();
+    X_Axis.printMaxPosition();
+    // X_Axis.printPositionDeccelerating();
+    Serial.println();
+    Serial.flush();
+    timeStamp += intervall;
+  }
+
+  if (myMillis - timeStamp1 > intervall1)
+  {
+    int x = random(0, 3);
+    switch (x)
     {
-      X_Axis.printIstPosition();
-      X_Axis.printSollPosition();
-      X_Axis.printMaxPosition();
-      //X_Axis.printPositionDeccelerating();
-      Serial.println();
-      Serial.flush();
-      timeStamp += intervall;
+    case 0:
+      X_Axis.moveAbsolute(random(0, X_Axis.getMaxPosition()));
+      break;
+
+    case 1:
+      X_Axis.moveAbsolute(X_Axis.getMaxPosition());
+      break;
+
+    case 2:
+      X_Axis.moveAbsolute(0);
+      break;
+
+    default:
+      break;
     }
 
-    if (myMillis - timeStamp1 > intervall1)
+    timeStamp1 += intervall1;
+  }
+
+  if (Serial.available() != 0)
+  {
+    while (Serial.available() != 0)
     {
-      int x = random(0, 3);
-      switch (x)
-      {
-      case 0:
-        X_Axis.moveAbsolute(random(0, X_Axis.getMaxPosition()));
-        break;
-
-      case 1:
-        X_Axis.moveAbsolute(X_Axis.getMaxPosition());
-        break;
-
-      case 2:
-        X_Axis.moveAbsolute(0);
-        break;
-
-      default:
-        break;
-      }
-
-      timeStamp1 += intervall1;
+      Serial.read();
     }
-
-    if (Serial.available() != 0)
+    while (Serial.available() == 0)
     {
-      while (Serial.available() != 0)
-      {
-        Serial.read();
-      }
-      while (Serial.available() == 0)
-      {
-      }
-      while (Serial.available() != 0)
-      {
-        Serial.read();
-      }
     }
-    return;
+    while (Serial.available() != 0)
+    {
+      Serial.read();
+    }
+  }
+  return;
 }

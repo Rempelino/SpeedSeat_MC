@@ -11,7 +11,7 @@ unsigned Axis::AxisCounter = 0;
 unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
 unsigned Axis::CyclesUsedForInterrupt = 0;
-bool Axis::steppingIsEnabled = true;
+bool Axis::SteppingIsEnabled = true;
 volatile bool Axis::analyzeWorkload = false;
 volatile float Axis::workload = 0;
 void (*Axis::ExecutePointer[MAX_AMOUNT_OF_AXIS])() = {0};
@@ -194,6 +194,9 @@ void Axis::printPositionDeccelerating()
 
 float Axis::getWorkload()
 {
+    if (!SteppingIsEnabled){
+        return 0;
+    }
     Axis::analyzeWorkload = true;
     while (analyzeWorkload)
     {
@@ -374,4 +377,8 @@ bool Axis::hasError()
 unsigned Axis::getErrorID()
 {
     return ErrorID;
+}
+
+bool Axis::steppingIsEnabled(){
+    return SteppingIsEnabled;
 }

@@ -69,7 +69,7 @@ private:
     volatile bool homingActive = false;
     volatile bool AxisIsHomed = true;
     volatile short homingStep = 0;
-    static bool steppingIsEnabled;
+    static bool SteppingIsEnabled;
     unsigned long EEPROMAdress;
     bool isInitialized = false;
     unsigned short ErrorID = 0;
@@ -138,6 +138,7 @@ public:
     bool isActive();
     bool isHomed();
     bool isDeccelerating();
+    static bool steppingIsEnabled();
     static float getWorkload();
     static void disableStepping();
     static void enableStepping();

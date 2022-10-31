@@ -141,9 +141,9 @@ void Axis::commandFinished()
 
 void Axis::disableStepping()
 {
-    if (steppingIsEnabled)
+    if (SteppingIsEnabled)
     {
-        steppingIsEnabled = false;
+        SteppingIsEnabled = false;
         TIMSK3 = TIMSK3 & ~(1 << OCIE1A);
         OCR3A = 65535;
     }
@@ -151,9 +151,9 @@ void Axis::disableStepping()
 
 void Axis::enableStepping()
 {
-    if (!steppingIsEnabled)
+    if (!SteppingIsEnabled)
     {
-        steppingIsEnabled = true;
+        SteppingIsEnabled = true;
         TIMSK3 |= (1 << OCIE1A);
     }
 }
