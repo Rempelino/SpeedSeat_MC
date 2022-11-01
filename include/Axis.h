@@ -136,7 +136,7 @@ public:
     unsigned long getHomingSpeed();
     unsigned long getHomingAcceleration();
     unsigned long getMaxSpeed();
-    
+
     bool getDirection();
     bool isRunningMaxSpeed();
     bool isActive();
