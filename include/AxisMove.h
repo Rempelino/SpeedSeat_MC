@@ -39,6 +39,9 @@ void Axis::moveAbsoluteInternal(unsigned long newPosition)
     {
         return;
     }
+    if (!SteppingIsEnabled){
+        return;
+    }
     if (newPosition > maxPosition)
     {
         newPosition = maxPosition;

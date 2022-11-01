@@ -67,12 +67,13 @@ private:
     bool softwareLimitsEnabled = true;
     volatile bool movingVelocity = false;
     volatile bool homingActive = false;
-    volatile bool AxisIsHomed = true;
-    volatile short homingStep = 0;
+    volatile bool AxisIsHomed = false;
+    volatile homingStep homingStep = waitForAxisToStop;
     static bool SteppingIsEnabled;
     unsigned long EEPROMAdress;
     bool isInitialized = false;
     unsigned short ErrorID = 0;
+    volatile bool AxisHasError = false;
 
     void calculateSpeedPeriodTable();
     void writeTable();
@@ -158,6 +159,7 @@ public:
     void disableSoftwareLimits();
     void setStepsPerMillimeter(unsigned long);
     bool hasError();
+    void resetAxis();
     unsigned getErrorID();
 };
 

@@ -81,7 +81,6 @@ class communication
     void sendAnswer();
     void sendValueRequest();
     void setNextValue();
-    void addCommandToRequestLine(CMD);
     void addAllCommandsToRequestLine();
     void calculateCycleTime();
     void addDataToRecivedBuffer();
@@ -90,6 +89,7 @@ public:
     void acknowledge(ANSWER);void acknowledge(ANSWER, int);
     void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
     communication();
+    void addCommandToRequestLine(CMD);
     void get_value(CMD);
     void execute();
     void fillValueBuffer(unsigned Value1, unsigned Value2, unsigned Value3);

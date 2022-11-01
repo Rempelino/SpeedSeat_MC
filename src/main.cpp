@@ -21,7 +21,17 @@ void analyzeMotionCernel();
 void setup()
 {
   Serial.begin(38400);
-
+  /*pinMode(PIN_X_ENDSTOP, INPUT_PULLUP);
+  pinMode(PIN_Y_ENDSTOP, INPUT_PULLUP);
+  pinMode(PIN_Z_ENDSTOP, INPUT_PULLUP);
+  while (1)
+  {
+    Serial.print(digitalRead(PIN_X_ENDSTOP));
+    Serial.print(digitalRead(PIN_Y_ENDSTOP));
+    Serial.print(digitalRead(PIN_Z_ENDSTOP));
+    Serial.println();
+    Serial.flush();
+  }*/
   // Achse initialisieren
   Axis::ExecutePointer[0] = []()
   { X_Axis.execute(); };
@@ -29,9 +39,9 @@ void setup()
   { Y_Axis.execute(); };
   Axis::ExecutePointer[2] = []()
   { Z_Axis.execute(); };
-  X_Axis.setStepsPerMillimeter(40);
-  Y_Axis.setStepsPerMillimeter(40);
-  Z_Axis.setStepsPerMillimeter(40);
+  X_Axis.setStepsPerMillimeter(STEPS_PER_MM);
+  Y_Axis.setStepsPerMillimeter(STEPS_PER_MM);
+  Z_Axis.setStepsPerMillimeter(STEPS_PER_MM);
 
   pinMode(56, OUTPUT);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -44,7 +54,7 @@ void setup()
   digitalWrite(PIN_BEEPER, LOW);
   // delay(100);
 
-  while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
+  /*while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
   {
     beep.doubleBeep();
   }
@@ -52,7 +62,7 @@ void setup()
   while (digitalRead(PIN_ENABLE) & !NO_HARDWARE)
   {
     delay(100);
-  }
+  }*/
   timeStamp = millis();
   timeStamp1 = millis();
 }
@@ -61,6 +71,7 @@ void setup()
 void loop()
 {
 
+  // digitalWrite(PIN_BEEPER, !digitalRead(PIN_BEEPER));
   while (ANALYZE_MOTION_CERNEL)
   {
     analyzeMotionCernel();
@@ -110,7 +121,9 @@ void loop()
         break;
 
       case FPS:
-        com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
+        //com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
+        com.fillValueBuffer(com.fps, 0, 0);
+
         break;
 
       case INIT_SUCCESSFUL:
@@ -125,7 +138,14 @@ void loop()
 
   if (com.recived_value.is_available)
   {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    if (Z_Axis.isHomed())
+    {
+      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+    }
+    else
+    {
+      digitalWrite(LED_BUILTIN, LOW);
+    }
     switch (com.recived_value.command)
     {
     case POSITION:
@@ -144,6 +164,7 @@ void loop()
       X_Axis.setHomingOffset(com.recived_value.as_int16[0]);
       Y_Axis.setHomingOffset(com.recived_value.as_int16[1]);
       Z_Axis.setHomingOffset(com.recived_value.as_int16[2]);
+      com.addCommandToRequestLine(MAX_POSITION);
       break;
 
     case ACCELLERATION:
@@ -182,6 +203,9 @@ void loop()
       {
         Z_Axis.home();
       }
+      Z_Axis.home();
+      X_Axis.home();
+      Y_Axis.home();
       break;
 
     default:
@@ -212,31 +236,40 @@ void loop()
 
   if ((X_Axis.hasError() || Y_Axis.hasError() || Z_Axis.hasError()))
   {
+    Axis::disableStepping();
     X_Axis.unlock();
     Y_Axis.unlock();
     Z_Axis.unlock();
-    while (!digitalRead(PIN_ENABLE))
+    if (X_Axis.hasError())
     {
-      if (X_Axis.hasError())
-      {
-        beep.beep(X_Axis.getErrorID());
-      }
-      if (Y_Axis.hasError())
-      {
-        beep.beep(Y_Axis.getErrorID() + 10);
-      }
-      if (Z_Axis.hasError())
-      {
-        beep.beep(Z_Axis.getErrorID() + 20);
-      }
+      beep.beep(X_Axis.getErrorID());
     }
+    if (Y_Axis.hasError())
+    {
+      beep.beep(Y_Axis.getErrorID() + 10);
+    }
+    if (Z_Axis.hasError())
+    {
+      beep.beep(Z_Axis.getErrorID() + 20);
+    }
+    if (digitalRead(PIN_ENABLE))
+    {
+      X_Axis.resetAxis();
+      Y_Axis.resetAxis();
+      Z_Axis.resetAxis();
+    }
+  }
+  else
+  {
     beep.kill();
-    while (digitalRead(PIN_ENABLE))
+    if (!digitalRead(PIN_ENABLE) && !Axis::steppingIsEnabled())
     {
+      beep.doubleBeep();
+      X_Axis.lock();
+      Y_Axis.lock();
+      Z_Axis.lock();
+      Axis::enableStepping();
     }
-    X_Axis.lock();
-    Y_Axis.lock();
-    Z_Axis.lock();
   }
 
   if (digitalRead(PIN_ENABLE) && Axis::steppingIsEnabled())
@@ -250,13 +283,8 @@ void loop()
     Axis::disableStepping();
     beep.doubleBeep();
   }
-
-  if (!digitalRead(PIN_ENABLE) && !Axis::steppingIsEnabled())
-  {
-    beep.doubleBeep();
-    Axis::enableStepping();
-  }
 }
+// END OF LOOP--------------------------------------------
 
 void analyzeMotionCernel()
 {

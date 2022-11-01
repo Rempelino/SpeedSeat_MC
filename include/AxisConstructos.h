@@ -1,5 +1,5 @@
 #include "Axis.h"
-Axis::Axis(const int Pin_Step, const int Pin_Direction, const int Pin_Enable, const int Pin_Trouble, const int Pin_Endstop, const TRACKING_TYPE trackingType)
+Axis::Axis(const int Pin_Step, const int Pin_Direction, const int Pin_Enable, const int Pin_Endstop, const int Pin_Trouble, const TRACKING_TYPE trackingType)
     : focusOnTracking(trackingType == _MC_FOCUS_ON_TRACKING),
       Pin_Step(Pin_Step),
       Pin_Direction(Pin_Direction),
@@ -26,8 +26,6 @@ void Axis::init(int Pin_Step, int Pin_Direction)
     defaultAcceleration = acceleration;
     defaulMaxSpeed = maxSpeed;
 
-
-
     calculateBreakingDistance();
     writeTable();
     step_Bit = digitalPinToBitMask(Pin_Step);
@@ -37,13 +35,15 @@ void Axis::init(int Pin_Step, int Pin_Direction)
 
 void Axis::initializeHardware()
 {
-    if (HardwareHasBeenInitialized){
+    if (HardwareHasBeenInitialized)
+    {
         return;
     }
     pinMode(Pin_Step, OUTPUT);
     pinMode(Pin_Direction, OUTPUT);
     pinMode(Pin_Enable, OUTPUT);
     pinMode(Pin_Endstop, INPUT_PULLUP);
+    pinMode(Pin_Trouble, INPUT_PULLUP);
     lock();
     TCCR3A = 0;
     TCCR3B = 0;

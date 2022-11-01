@@ -17,7 +17,7 @@ void Axis::executeHoming()
         break;
 
     case clearEndstop:
-        if (digitalRead(Pin_Endstop))
+        if (!digitalRead(Pin_Endstop))
         {
             if (!active)
             {
@@ -34,7 +34,7 @@ void Axis::executeHoming()
     case driveToEndstop:
         if (!stopping)
         {
-            if (digitalRead(Pin_Endstop))
+            if (!digitalRead(Pin_Endstop))
             {
                 stop();
                 homingStep = moveFromEndstopAfterHoming;
@@ -55,7 +55,9 @@ void Axis::executeHoming()
         {
             setTempAcceleration(accelerationWhileHoming);
             setTempSpeed(speedWhileHoming);
-            moveRelativeInternal(homingOffset, true);
+            istPosition = 0;
+            sollPosition = 0;
+            moveAbsoluteInternal(homingOffset);
             homingStep = waitingForEndOfMovement;
         }
         break;
@@ -63,6 +65,9 @@ void Axis::executeHoming()
     case waitingForEndOfMovement:
         if (!active)
         {
+            resetAcceleration();
+            resetSpeed();
+            enableSoftwareLimits();
             istPosition = 0;
             AxisIsHomed = true;
             homingActive = false;

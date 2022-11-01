@@ -5,17 +5,14 @@
 #include "AxisStepping.h"
 #include "AxisEEPROM.h"
 
-
-
 unsigned Axis::AxisCounter = 0;
 unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
 unsigned Axis::CyclesUsedForInterrupt = 0;
-bool Axis::SteppingIsEnabled = true;
+bool Axis::SteppingIsEnabled = false;
 volatile bool Axis::analyzeWorkload = false;
 volatile float Axis::workload = 0;
 void (*Axis::ExecutePointer[MAX_AMOUNT_OF_AXIS])() = {0};
-
 
 unsigned long Axis::getIstpositon()
 {
@@ -194,7 +191,8 @@ void Axis::printPositionDeccelerating()
 
 float Axis::getWorkload()
 {
-    if (!SteppingIsEnabled){
+    if (!SteppingIsEnabled)
+    {
         return 0;
     }
     Axis::analyzeWorkload = true;
@@ -218,7 +216,8 @@ void Axis::setTempAcceleration(unsigned long acceleration)
 
 void Axis::resetAcceleration()
 {
-    if ( acceleration == defaultAcceleration){
+    if (acceleration == defaultAcceleration)
+    {
         return;
     }
     acceleration = defaultAcceleration;
@@ -252,8 +251,9 @@ void Axis::setTempSpeed(unsigned long speed)
 }
 
 void Axis::resetSpeed()
-{   
-    if (maxSpeed == defaulMaxSpeed){
+{
+    if (maxSpeed == defaulMaxSpeed)
+    {
         return;
     }
     maxSpeed = defaulMaxSpeed;
@@ -295,9 +295,14 @@ void Axis::disableSoftwareLimits()
 void Axis::home()
 {
     initializeHardware();
-    if (homingActive){
+    if(!SteppingIsEnabled){
         return;
     }
+    if (homingActive)
+    {
+        return;
+    }
+    AxisIsHomed = false;
     homingStep = waitForAxisToStop;
     homingActive = true;
 }
@@ -314,11 +319,12 @@ void Axis::setMaxPosition(unsigned long MaxPosition)
     {
         unsigned long newPosition = istPosition * maxPosition / this->maxPosition;
         this->maxPosition = maxPosition;
-        
+
         if (isInitialized)
-        {   
+        {
             saveData();
-            if (AxisIsHomed){
+            if (AxisIsHomed)
+            {
                 moveAbsoluteInternal(newPosition);
             }
         }
@@ -326,26 +332,34 @@ void Axis::setMaxPosition(unsigned long MaxPosition)
 }
 
 void Axis::setHomingOffset(unsigned long offset)
-{   
+{
     offset = offset * stepsPerMillimeter;
     if (offset != homingOffset)
     {
-        homingOffset = offset;
+        maxPosition = maxPosition + homingOffset - offset;
+        homingOffset = offset; 
         saveData();
         home();
     }
 }
 
-void Axis::setStepsPerMillimeter(unsigned long steps){
+void Axis::setStepsPerMillimeter(unsigned long steps)
+{
     stepsPerMillimeter = steps;
 }
 
 bool Axis::hasError()
 {
+    if(!HardwareHasBeenInitialized){
+        return false;
+    }
+    if(AxisHasError){
+        return true;
+    }
     unsigned long int timeStamp;
-    const unsigned long int timeTillError = 50;//time delay to prevent errors due to noise
+    const unsigned long int timeTillError = 50; // time delay to prevent errors due to noise
 
-    if (AxisIsHomed & !digitalRead(Pin_Endstop))
+    if (AxisIsHomed && !digitalRead(Pin_Endstop))
     {
         timeStamp = millis();
         while (!digitalRead(Pin_Endstop))
@@ -353,6 +367,7 @@ bool Axis::hasError()
             if (millis() - timeStamp >= timeTillError)
             {
                 ErrorID = 3;
+                AxisHasError = true;
                 return true;
             }
         }
@@ -366,12 +381,16 @@ bool Axis::hasError()
             if (millis() - timeStamp >= timeTillError)
             {
                 ErrorID = 4;
+                AxisHasError = true;
                 return true;
-                break;
             }
         }
     }
     return false;
+}
+
+void Axis::resetAxis(){
+    AxisHasError = false;
 }
 
 unsigned Axis::getErrorID()
@@ -379,6 +398,7 @@ unsigned Axis::getErrorID()
     return ErrorID;
 }
 
-bool Axis::steppingIsEnabled(){
+bool Axis::steppingIsEnabled()
+{
     return SteppingIsEnabled;
 }

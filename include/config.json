@@ -251,7 +251,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 1500,
                     "default": 0.5
                 },
                 "value2": {
@@ -259,7 +259,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 1500,
                     "default": 0.5
                 },
                 "value3": {
@@ -267,7 +267,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 1500,
                     "default": 0.5
                 }
             }
