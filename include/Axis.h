@@ -74,6 +74,7 @@ private:
     bool isInitialized = false;
     unsigned short ErrorID = 0;
     volatile bool AxisHasError = false;
+    static bool InterruptHasBeenSet;
 
     void calculateSpeedPeriodTable();
     void writeTable();
@@ -95,7 +96,8 @@ private:
     void moveRelativeInternal(unsigned long, bool);
     void moveVelocityInternal(unsigned long, bool);
     unsigned long getSpeed();
-
+    bool AxisIsReady();
+    static void setInterrupt();
 
     void saveData();
     void readData();
@@ -122,6 +124,7 @@ public:
     void lock();
     void unlock();
     void moveAbsolute(unsigned long);
+    void moveAbsoluteSteps(unsigned long);
     void moveRelative(unsigned long, bool);
     void moveVelocity(unsigned long, bool);
     void stop();

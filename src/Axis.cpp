@@ -10,6 +10,7 @@ unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
 unsigned Axis::CyclesUsedForInterrupt = 0;
 bool Axis::SteppingIsEnabled = false;
+bool Axis::InterruptHasBeenSet = false;
 volatile bool Axis::analyzeWorkload = false;
 volatile float Axis::workload = 0;
 void (*Axis::ExecutePointer[MAX_AMOUNT_OF_AXIS])() = {0};
@@ -195,9 +196,15 @@ float Axis::getWorkload()
     {
         return 0;
     }
+    unsigned long maxInterruptTime = 10;
     Axis::analyzeWorkload = true;
+    unsigned long timeStampStartAnalyze = millis();
     while (analyzeWorkload)
     {
+        if (millis() - timeStampStartAnalyze > maxInterruptTime)
+        {
+            return 0;
+        }
     }
     return workload;
 }
@@ -295,7 +302,8 @@ void Axis::disableSoftwareLimits()
 void Axis::home()
 {
     initializeHardware();
-    if(!SteppingIsEnabled){
+    if (!SteppingIsEnabled)
+    {
         return;
     }
     if (homingActive)
@@ -337,7 +345,7 @@ void Axis::setHomingOffset(unsigned long offset)
     if (offset != homingOffset)
     {
         maxPosition = maxPosition + homingOffset - offset;
-        homingOffset = offset; 
+        homingOffset = offset;
         saveData();
         home();
     }
@@ -350,10 +358,12 @@ void Axis::setStepsPerMillimeter(unsigned long steps)
 
 bool Axis::hasError()
 {
-    if(!HardwareHasBeenInitialized){
+    if (!HardwareHasBeenInitialized)
+    {
         return false;
     }
-    if(AxisHasError){
+    if (AxisHasError)
+    {
         return true;
     }
     unsigned long int timeStamp;
@@ -389,7 +399,8 @@ bool Axis::hasError()
     return false;
 }
 
-void Axis::resetAxis(){
+void Axis::resetAxis()
+{
     AxisHasError = false;
 }
 
@@ -401,4 +412,22 @@ unsigned Axis::getErrorID()
 bool Axis::steppingIsEnabled()
 {
     return SteppingIsEnabled;
+}
+
+bool Axis::AxisIsReady()
+{
+    if (!HardwareHasBeenInitialized)
+    {
+        initializeHardware();
+        return false;
+    }
+    if (!SteppingIsEnabled)
+    {
+        return false;
+    }
+    if (!AxisIsLocked)
+    {
+        return false;
+    }
+    return true;
 }

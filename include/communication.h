@@ -61,42 +61,28 @@ class communication
     unsigned long millisAtLastSendMessage;
     unsigned long millisSinceBufferWasEmpty;
     unsigned long millisSinceBufferWasNotEmpty;
-    unsigned long steps_per_millimeter;
-    unsigned long axis_max_position_as_steps[3];
-
     unsigned long cycleTime;
     uint8_t ringCounter;
-
     bool waiting_for_okay;
     bool valuesHavBeenFilled = false;
-    bool hasBeendInitialized = false;
     unsigned valuesToSend[3];
-
-    const int requestBufferLength = 100;
     CMD request_buffer[REQUEST_BUFFER_LENGTH];
     bool verifyData();
     void readNewCommand();
-    void unsignedLongToTwoBytes(unsigned long, unsigned long, byte *, byte *);
     void sendBuffer();
-    void sendAnswer();
-    void sendValueRequest();
-    void setNextValue();
     void addAllCommandsToRequestLine();
     void calculateCycleTime();
     void addDataToRecivedBuffer();
+    void acknowledge(ANSWER);
+    void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
 
 public:
-    void acknowledge(ANSWER);void acknowledge(ANSWER, int);
-    void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
     communication();
     void addCommandToRequestLine(CMD);
-    void get_value(CMD);
     void execute();
     void fillValueBuffer(unsigned Value1, unsigned Value2, unsigned Value3);
     unsigned fps;
     CMD getRequestedValue();
-    unsigned long TwoBytesToSteps(byte, byte, unsigned long);
     AvailableInfos recived_value;
-    CMD available_command;
 };
 #endif

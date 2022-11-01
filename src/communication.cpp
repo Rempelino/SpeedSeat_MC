@@ -73,7 +73,7 @@ void communication::execute()
     // buffer overflow -> reseting communication
     if ((bytesRecived > PROTOCOL_LENGTH + (int)(waiting_for_okay)))
     {
-        acknowledge(NOT_OKAY, 1);
+        acknowledge(NOT_OKAY);
     }
 
     // timeout in normal operation -> incomplete protocoll has been send
@@ -82,7 +82,7 @@ void communication::execute()
 
         if (millis() - millisSinceBufferWasEmpty > TIMEOUT)
         {
-            acknowledge(NOT_OKAY, 2);
+            acknowledge(NOT_OKAY);
         }
     }
     else
@@ -96,8 +96,9 @@ void communication::execute()
     {
         if (millis() - millisSinceBufferWasNotEmpty > 1000)
         {
-            //addCommandToRequestLine(POSITION);
-            //addCommandToRequestLine(HOMING_STATUS);
+            addCommandToRequestLine(POSITION);
+            addCommandToRequestLine(HOMING_STATUS);
+            addCommandToRequestLine(FPS);
             millisSinceBufferWasNotEmpty = millis(); //TOBI delete this line to create maximum SPAM
         }
     }
@@ -123,29 +124,6 @@ void communication::acknowledge(ANSWER answer)
 
     case NOT_OKAY:
         Serial.write(254);
-        Serial.flush();
-        break;
-
-    default:
-        break;
-    }
-}
-
-void communication::acknowledge(ANSWER answer, int offset)
-{
-
-    bytesRecived = 0;
-    millisSinceBufferWasEmpty = millis();
-    millisSinceBufferWasNotEmpty = millis();
-    switch (answer)
-    {
-    case OKAY:
-        Serial.write(255);
-        Serial.flush();
-        break;
-
-    case NOT_OKAY:
-        Serial.write(254 - offset);
         Serial.flush();
         break;
 
@@ -182,7 +160,7 @@ void communication::readNewCommand()
             Serial.flush();
         }
 
-        acknowledge(NOT_OKAY, 3);
+        acknowledge(NOT_OKAY);
         return;
     }
 
@@ -197,7 +175,6 @@ void communication::readNewCommand()
     case MAX_POSITION:
     case ACCELLERATION:
     case MAX_SPEED:
-    case HOMING_STATUS:
     case NEW_HOMING:
     case HOMING_SPEED:
     case HOMING_ACCELERATION:
@@ -240,24 +217,8 @@ void communication::readNewCommand()
     }
     else
     {
-        acknowledge(NOT_OKAY, 4);
+        acknowledge(NOT_OKAY);
     }
-}
-
-void communication::unsignedLongToTwoBytes(unsigned long Value, unsigned long MaxValue, byte *Byte1, byte *Byte2)
-{
-    double ValueScaled;
-    if (MaxValue == 0)
-    {
-        ValueScaled = Value;
-    }
-    else
-    {
-        ValueScaled = Value * 65535 / MaxValue;
-    }
-    unsigned int ValueScaledINT = (unsigned int)(ValueScaled);
-    *Byte1 = ValueScaledINT / 256;
-    *Byte2 = ValueScaledINT;
 }
 
 void communication::sendBuffer()
@@ -376,7 +337,7 @@ void communication::addDataToRecivedBuffer()
 {
     if (bytesRecived == PROTOCOL_LENGTH + 1)
     {
-        acknowledge(NOT_OKAY, 6);
+        acknowledge(NOT_OKAY);
         return;
     }
     recived_buffer[bytesRecived] = Serial.read();

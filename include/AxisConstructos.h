@@ -45,13 +45,20 @@ void Axis::initializeHardware()
     pinMode(Pin_Endstop, INPUT_PULLUP);
     pinMode(Pin_Trouble, INPUT_PULLUP);
     lock();
+    if(InterruptHasBeenSet){
+        setInterrupt();
+    }
+    HardwareHasBeenInitialized = true;
+}
+
+void Axis::setInterrupt(){
     TCCR3A = 0;
     TCCR3B = 0;
     TCNT3 = 0;
     OCR3A = 65535;           // set interrupt timer to min frequency
     TCCR3B |= (1 << WGM12);  // CTC mode
     TCCR3B |= (1 << CS10);   // no prescaler 16 = 1 microsekunde @16Mhz Processor
-    TIMSK3 |= (1 << OCIE1A); // enable timer compare interrupt
-    HardwareHasBeenInitialized = true;
-    SteppingIsEnabled = true;
+    TIMSK3 = TIMSK3 & ~(1 << OCIE1A); // disable timer compare interrupt
+    OCR3A = 65535;
+    SteppingIsEnabled = false;
 }

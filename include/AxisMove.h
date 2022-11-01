@@ -10,6 +10,14 @@ void Axis::moveAbsolute(unsigned long newPosition)
     }
 }
 
+void Axis::moveAbsoluteSteps(unsigned long newPosition)
+{
+    if (AxisIsHomed)
+    {
+        moveAbsoluteInternal(newPosition);
+    }
+}
+
 void Axis::moveRelative(unsigned long newPosition, bool direction)
 {
     if (AxisIsHomed)
@@ -31,21 +39,15 @@ void Axis::moveVelocity(unsigned long speed, bool direction)
 unsigned long speed;
 void Axis::moveAbsoluteInternal(unsigned long newPosition)
 {
-    if (!HardwareHasBeenInitialized)
-    {
-        initializeHardware();
-    }
-    if (!AxisIsLocked)
-    {
+    if(!AxisIsReady()){
         return;
     }
-    if (!SteppingIsEnabled){
-        return;
-    }
+
     if (newPosition > maxPosition)
     {
         newPosition = maxPosition;
     }
+
     lastCommandPosition = newPosition;
     speed = getSpeed();
     changeOfDirection = false;
@@ -172,10 +174,10 @@ void Axis::moveAbsoluteInternal(unsigned long newPosition)
 
 void Axis::moveRelativeInternal(unsigned long newPosition, bool direction)
 {
-    if (!HardwareHasBeenInitialized)
-    {
-        initializeHardware();
+    if(!AxisIsReady()){
+        return;
     }
+
     if (direction)
     {
         moveAbsoluteInternal(istPosition + newPosition);
@@ -195,9 +197,8 @@ void Axis::moveRelativeInternal(unsigned long newPosition, bool direction)
 
 void Axis::moveVelocityInternal(unsigned long speed, bool direction)
 {
-    if (!HardwareHasBeenInitialized)
-    {
-        initializeHardware();
+    if(!AxisIsReady()){
+        return;
     }
 
     unsigned currentTimerPeriod;
