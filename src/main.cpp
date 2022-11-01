@@ -18,20 +18,11 @@ Axis Z_Axis(PIN_Z_STEP, PIN_Z_DIRECTION, PIN_Z_ENABLE, PIN_Z_ENDSTOP, PIN_Z_TROU
 Beeping beep(PIN_BEEPER, 400, 1000);
 int AxisInBearbeitung;
 void analyzeMotionCernel();
+void writeRequestedValue();
+void readNewCommand();
 void setup()
 {
   Serial.begin(38400);
-  /*pinMode(PIN_X_ENDSTOP, INPUT_PULLUP);
-  pinMode(PIN_Y_ENDSTOP, INPUT_PULLUP);
-  pinMode(PIN_Z_ENDSTOP, INPUT_PULLUP);
-  while (1)
-  {
-    Serial.print(digitalRead(PIN_X_ENDSTOP));
-    Serial.print(digitalRead(PIN_Y_ENDSTOP));
-    Serial.print(digitalRead(PIN_Z_ENDSTOP));
-    Serial.println();
-    Serial.flush();
-  }*/
   // Achse initialisieren
   Axis::ExecutePointer[0] = []()
   { X_Axis.execute(); };
@@ -70,156 +61,32 @@ void setup()
 //--------------------------------------LOOP-------------------------------------------------
 void loop()
 {
-
-  // digitalWrite(PIN_BEEPER, !digitalRead(PIN_BEEPER));
   while (ANALYZE_MOTION_CERNEL)
   {
     analyzeMotionCernel();
   }
 
-  if (EXECUTE_COMMUICATION)
+  com.execute();
+
+  if (com.getRequestedValue() != IDLE)
   {
-    com.execute();
-    if (com.getRequestedValue() != IDLE)
-    {
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-      switch (com.getRequestedValue())
-      {
-      case POSITION:
-        com.fillValueBuffer(
-            X_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / X_Axis.getMaxPosition(),
-            Y_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Y_Axis.getMaxPosition(),
-            Z_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Z_Axis.getMaxPosition());
-        break;
-
-      case MAX_POSITION:
-        com.fillValueBuffer(X_Axis.getMaxPosition(), Y_Axis.getMaxPosition(), Z_Axis.getMaxPosition());
-        break;
-
-      case HOMING_OFFSET:
-        com.fillValueBuffer(X_Axis.getHomingOffset(), Y_Axis.getHomingOffset(), Z_Axis.getHomingOffset());
-        break;
-
-      case ACCELLERATION:
-        com.fillValueBuffer(X_Axis.getAcceleration(), Y_Axis.getAcceleration(), Z_Axis.getAcceleration());
-        break;
-
-      case MAX_SPEED:
-        com.fillValueBuffer(X_Axis.getMaxSpeed(), Y_Axis.getMaxSpeed(), Z_Axis.getMaxSpeed());
-        break;
-
-      case HOMING_STATUS:
-        com.fillValueBuffer(X_Axis.isHomed(), Y_Axis.isHomed(), Z_Axis.isHomed());
-        break;
-
-      case HOMING_SPEED:
-        com.fillValueBuffer(X_Axis.getHomingSpeed(), Y_Axis.getHomingSpeed(), Z_Axis.getHomingSpeed());
-        break;
-
-      case HOMING_ACCELERATION:
-        com.fillValueBuffer(X_Axis.getHomingAcceleration(), Y_Axis.getHomingAcceleration(), Z_Axis.getHomingAcceleration());
-        break;
-
-      case FPS:
-        //com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
-        com.fillValueBuffer(com.fps, 0, 0);
-
-        break;
-
-      case INIT_SUCCESSFUL:
-        com.fillValueBuffer(0, 0, 0);
-        break;
-
-      default:
-        break;
-      }
-    }
+    writeRequestedValue();
   }
 
   if (com.recived_value.is_available)
   {
-    if (Z_Axis.isHomed())
-    {
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-    }
-    else
-    {
-      digitalWrite(LED_BUILTIN, LOW);
-    }
-    switch (com.recived_value.command)
-    {
-    case POSITION:
-      X_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[0]) * X_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
-      Y_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[1]) * Y_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
-      Z_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[2]) * Z_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
-      break;
-
-    case MAX_POSITION:
-      X_Axis.setMaxPosition(com.recived_value.as_int16[0]);
-      Y_Axis.setMaxPosition(com.recived_value.as_int16[1]);
-      Z_Axis.setMaxPosition(com.recived_value.as_int16[2]);
-      break;
-
-    case HOMING_OFFSET:
-      X_Axis.setHomingOffset(com.recived_value.as_int16[0]);
-      Y_Axis.setHomingOffset(com.recived_value.as_int16[1]);
-      Z_Axis.setHomingOffset(com.recived_value.as_int16[2]);
-      com.addCommandToRequestLine(MAX_POSITION);
-      break;
-
-    case ACCELLERATION:
-      X_Axis.setAcceleration(com.recived_value.as_int16[0]);
-      Y_Axis.setAcceleration(com.recived_value.as_int16[1]);
-      Z_Axis.setAcceleration(com.recived_value.as_int16[2]);
-      break;
-
-    case MAX_SPEED:
-      X_Axis.setSpeed(com.recived_value.as_int16[0]);
-      Y_Axis.setSpeed(com.recived_value.as_int16[1]);
-      Z_Axis.setSpeed(com.recived_value.as_int16[2]);
-      break;
-
-    case HOMING_SPEED:
-      X_Axis.setHomingSpeed(com.recived_value.as_int16[0]);
-      Y_Axis.setHomingSpeed(com.recived_value.as_int16[1]);
-      Z_Axis.setHomingSpeed(com.recived_value.as_int16[2]);
-      break;
-
-    case HOMING_ACCELERATION:
-      X_Axis.setHomingAcceleration(com.recived_value.as_int16[0]);
-      Y_Axis.setHomingAcceleration(com.recived_value.as_int16[1]);
-      Z_Axis.setHomingAcceleration(com.recived_value.as_int16[2]);
-      break;
-    case NEW_HOMING:
-      if (com.recived_value.as_bool[0])
-      {
-        X_Axis.home();
-      }
-      if (com.recived_value.as_bool[1])
-      {
-        Y_Axis.home();
-      }
-      if (com.recived_value.as_bool[2])
-      {
-        Z_Axis.home();
-      }
-      Z_Axis.home();
-      X_Axis.home();
-      Y_Axis.home();
-      break;
-
-    default:
-      break;
-    }
-    com.recived_value.is_available = false;
+    readNewCommand();
   }
 
   if (NO_HARDWARE)
   {
+    Axis::enableStepping();
+    //X_Axis.home();
+    //Y_Axis.home();
+    //Z_Axis.home();
     return;
   }
-
-  // END HERE IF NO HARDWARE ---------------------------
+  // END HERE IF NO HARDWARE --------------------------------
 
   if (!Z_Axis.isHomed())
   {
@@ -285,6 +152,138 @@ void loop()
   }
 }
 // END OF LOOP--------------------------------------------
+
+void writeRequestedValue()
+{
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  switch (com.getRequestedValue())
+  {
+  case POSITION:
+    com.fillValueBuffer(
+        X_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / X_Axis.getMaxPosition(),
+        Y_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Y_Axis.getMaxPosition(),
+        Z_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Z_Axis.getMaxPosition());
+    break;
+
+  case MAX_POSITION:
+    com.fillValueBuffer(X_Axis.getMaxPosition(), Y_Axis.getMaxPosition(), Z_Axis.getMaxPosition());
+    break;
+
+  case HOMING_OFFSET:
+    com.fillValueBuffer(X_Axis.getHomingOffset(), Y_Axis.getHomingOffset(), Z_Axis.getHomingOffset());
+    break;
+
+  case ACCELLERATION:
+    com.fillValueBuffer(X_Axis.getAcceleration(), Y_Axis.getAcceleration(), Z_Axis.getAcceleration());
+    break;
+
+  case MAX_SPEED:
+    com.fillValueBuffer(X_Axis.getMaxSpeed(), Y_Axis.getMaxSpeed(), Z_Axis.getMaxSpeed());
+    break;
+
+  case HOMING_STATUS:
+    com.fillValueBuffer(X_Axis.isHomed(), Y_Axis.isHomed(), Z_Axis.isHomed());
+    break;
+
+  case HOMING_SPEED:
+    com.fillValueBuffer(X_Axis.getHomingSpeed(), Y_Axis.getHomingSpeed(), Z_Axis.getHomingSpeed());
+    break;
+
+  case HOMING_ACCELERATION:
+    com.fillValueBuffer(X_Axis.getHomingAcceleration(), Y_Axis.getHomingAcceleration(), Z_Axis.getHomingAcceleration());
+    break;
+
+  case FPS:
+    com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
+    break;
+
+  case INIT_SUCCESSFUL:
+    com.fillValueBuffer(0, 0, 0);
+    break;
+
+  default:
+    break;
+  }
+}
+
+void readNewCommand()
+{
+  if (Z_Axis.isHomed())
+  {
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  }
+  else
+  {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  switch (com.recived_value.command)
+  {
+  case POSITION:
+    X_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[0]) * X_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    Y_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[1]) * Y_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    Z_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[2]) * Z_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    break;
+
+  case MAX_POSITION:
+    X_Axis.setMaxPosition(com.recived_value.as_int16[0]);
+    Y_Axis.setMaxPosition(com.recived_value.as_int16[1]);
+    Z_Axis.setMaxPosition(com.recived_value.as_int16[2]);
+    break;
+
+  case HOMING_OFFSET:
+    X_Axis.setHomingOffset(com.recived_value.as_int16[0]);
+    Y_Axis.setHomingOffset(com.recived_value.as_int16[1]);
+    Z_Axis.setHomingOffset(com.recived_value.as_int16[2]);
+    com.addCommandToRequestLine(MAX_POSITION);
+    break;
+
+  case ACCELLERATION:
+    X_Axis.setAcceleration(com.recived_value.as_int16[0]);
+    Y_Axis.setAcceleration(com.recived_value.as_int16[1]);
+    Z_Axis.setAcceleration(com.recived_value.as_int16[2]);
+    break;
+
+  case MAX_SPEED:
+    X_Axis.setSpeed(com.recived_value.as_int16[0]);
+    Y_Axis.setSpeed(com.recived_value.as_int16[1]);
+    Z_Axis.setSpeed(com.recived_value.as_int16[2]);
+    break;
+
+  case HOMING_SPEED:
+    X_Axis.setHomingSpeed(com.recived_value.as_int16[0]);
+    Y_Axis.setHomingSpeed(com.recived_value.as_int16[1]);
+    Z_Axis.setHomingSpeed(com.recived_value.as_int16[2]);
+    break;
+
+  case HOMING_ACCELERATION:
+    X_Axis.setHomingAcceleration(com.recived_value.as_int16[0]);
+    Y_Axis.setHomingAcceleration(com.recived_value.as_int16[1]);
+    Z_Axis.setHomingAcceleration(com.recived_value.as_int16[2]);
+    break;
+  case NEW_HOMING:
+    if (com.recived_value.as_bool[0])
+    {
+      X_Axis.home();
+    }
+    if (com.recived_value.as_bool[1])
+    {
+      Y_Axis.home();
+    }
+    if (com.recived_value.as_bool[2])
+    {
+      Z_Axis.home();
+    }
+    Z_Axis.home();
+    X_Axis.home();
+    Y_Axis.home();
+    break;
+
+  default:
+    break;
+  }
+  com.recived_value.is_available = false;
+}
+
 
 void analyzeMotionCernel()
 {
