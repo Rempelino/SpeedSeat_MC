@@ -14,12 +14,12 @@ communication com;
 Axis X_Axis(PIN_X_STEP, PIN_X_DIRECTION, PIN_X_ENABLE, PIN_X_ENDSTOP, PIN_X_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
 Axis Y_Axis(PIN_Y_STEP, PIN_Y_DIRECTION, PIN_Y_ENABLE, PIN_Y_ENDSTOP, PIN_Y_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
 Axis Z_Axis(PIN_Z_STEP, PIN_Z_DIRECTION, PIN_Z_ENABLE, PIN_Z_ENDSTOP, PIN_Z_TROUBLE, _MC_FOCUS_ON_SMOOTHENESS);
-
 Beeping beep(PIN_BEEPER, 400, 1000);
-int AxisInBearbeitung;
+
 void analyzeMotionCernel();
 void writeRequestedValue();
 void readNewCommand();
+
 void setup()
 {
   Serial.begin(38400);
@@ -81,9 +81,6 @@ void loop()
   if (NO_HARDWARE)
   {
     Axis::enableStepping();
-    //X_Axis.home();
-    //Y_Axis.home();
-    //Z_Axis.home();
     return;
   }
   // END HERE IF NO HARDWARE --------------------------------
@@ -283,7 +280,6 @@ void readNewCommand()
   }
   com.recived_value.is_available = false;
 }
-
 
 void analyzeMotionCernel()
 {
