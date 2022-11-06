@@ -3,7 +3,7 @@
         "connectionResponseTimeoutMs": 3000,
         "commands": [
             {
-                "groupLabel": "Motor-Positions",
+                "groupLabel": "Motor-Comand-Positions",
                 "id": 0,
                 "readonly": false,
                 "value1": {
@@ -32,31 +32,60 @@
                 }
             },
             {
-                "groupLabel": "Frames Per Second",
+                "groupLabel": "Motor Ist Positions",
+                "id": 12,
+                "readonly": false,
+                "value1": {
+                    "label": "Front-Right-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                },
+                "value2": {
+                    "label": "Front-Left-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                },
+                "value3": {
+                    "label": "Back-Motor Position",
+                    "type": "numeric",
+                    "scaleToFullRange": true,
+                    "min": 0,
+                    "max": 1,
+                    "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Information",
                 "id": 11,
                 "readonly": true,
                 "value1": {
-                    "label": "Frames",
+                    "label": "Frames per Second",
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 0,
-                    "max": 200,
+                    "max": 100,
                     "default": 0
                 },
                 "value2": {
                     "label": "wokload of motion cernel %",
                     "type": "numeric",
                     "scaleToFullRange": false,
-                    "min": 20,
-                    "max": 500,
+                    "min": 0,
+                    "max": 65535,
                     "default": 0.5
                 },
                 "value3": {
-                    "label": "???",
+                    "label": "failed transmissions",
                     "type": "numeric",
                     "scaleToFullRange": false,
-                    "min": 20,
-                    "max": 500,
+                    "min": 0,
+                    "max": 65535,
                     "default": 0.5
                 }
             },
@@ -156,7 +185,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 2000,
                     "default": 0.5
                 },
                 "value2": {
@@ -164,7 +193,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 2000,
                     "default": 0.5
                 },
                 "value3": {
@@ -172,7 +201,7 @@
                     "type": "numeric",
                     "scaleToFullRange": false,
                     "min": 20,
-                    "max": 500,
+                    "max": 2000,
                     "default": 0.5
                 }
             },

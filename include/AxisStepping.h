@@ -11,10 +11,11 @@ ISR(TIMER3_COMPA_vect)
     }
 
     if (Axis::analyzeWorkload)
-    {
-        Axis::workload = (float)(TCNT3) / (float)(Axis::TimerPeriod);
+    {   
+        Axis::workload = (float)TCNT3/Axis::TimerPeriod;
         Axis::analyzeWorkload = false;
     }
+
     OCR3A = Axis::TimerPeriod;
 }
 
@@ -151,7 +152,8 @@ void Axis::disableStepping()
 
 void Axis::enableStepping()
 {
-    if(InterruptHasBeenSet){
+    if (!InterruptHasBeenSet)
+    {
         setInterrupt();
     }
     if (!SteppingIsEnabled)

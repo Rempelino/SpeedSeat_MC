@@ -13,8 +13,8 @@ void Axis::saveData()
     EEPROMAdress = AxisNumber * 1000;
     writeEEPROM(maxPosition);
     writeEEPROM(homingOffset);
-    writeEEPROM(acceleration);
-    writeEEPROM(maxSpeed);
+    writeEEPROM(defaultAcceleration);
+    writeEEPROM(defaulMaxSpeed);
     writeEEPROM(speedWhileHoming);
     writeEEPROM(accelerationWhileHoming);
 }
@@ -24,11 +24,10 @@ void Axis::readData()
     EEPROMAdress = AxisNumber * 1000;
     readEEPROM(maxPosition);
     readEEPROM(homingOffset);
-    readEEPROM(acceleration);
-    readEEPROM(maxSpeed);
+    readEEPROM(defaultAcceleration);
+    readEEPROM(defaulMaxSpeed);
     readEEPROM(speedWhileHoming);
     readEEPROM(accelerationWhileHoming);
-
 }
 
 void Axis::writeEEPROM(unsigned long data)

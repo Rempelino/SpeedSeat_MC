@@ -1,10 +1,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define NO_HARDWARE true
-#define ANALYZE_MOTION_CERNEL false
 #define STEPS_PER_MM 40UL
-#define ALLOW_MOVEMENT_AFTER_BOOTUP false
+
+#define NO_HARDWARE
+//#define ANALYZE_MOTION_CERNEL
+//#define ALLOW_MOVEMENT_AFTER_BOOTUP
+#define USE_EEPROM
+#define PUSH_STATUS_WHEN_COM_IN_IDLE // TOBI you might comment to stop spam
 #include "pins.h"
 #endif
 

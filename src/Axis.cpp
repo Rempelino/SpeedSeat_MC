@@ -4,11 +4,11 @@
 #include "AxisHome.h"
 #include "AxisStepping.h"
 #include "AxisEEPROM.h"
+#include "configuration.h"
 
 unsigned Axis::AxisCounter = 0;
 unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
-unsigned Axis::CyclesUsedForInterrupt = 0;
 bool Axis::SteppingIsEnabled = false;
 bool Axis::InterruptHasBeenSet = false;
 volatile bool Axis::analyzeWorkload = false;
@@ -299,22 +299,6 @@ void Axis::disableSoftwareLimits()
     softwareLimitsEnabled = false;
 }
 
-void Axis::home()
-{
-    initializeHardware();
-    if (!SteppingIsEnabled)
-    {
-        return;
-    }
-    if (homingActive)
-    {
-        return;
-    }
-    AxisIsHomed = false;
-    homingStep = waitForAxisToStop;
-    homingActive = true;
-}
-
 bool Axis::isHomed()
 {
     return AxisIsHomed;
@@ -419,7 +403,6 @@ bool Axis::AxisIsReady()
     if (!HardwareHasBeenInitialized)
     {
         initializeHardware();
-        return false;
     }
     if (!SteppingIsEnabled)
     {

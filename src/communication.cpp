@@ -1,4 +1,5 @@
 #include "communication.h"
+#include "configuration.h"
 
 communication::communication()
 {
@@ -16,35 +17,45 @@ void communication::execute()
     }
 
     // waiting for acknowledgement of previous send command
-    if (waiting_for_okay & (bytesRecived == 1) || (bytesRecived == PROTOCOL_LENGTH + 1))
+    if (waiting_for_okay && bytesRecived >= 1)
     {
-        //check if first or last byte is OKAY
-        if (recived_buffer[0] == 255 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 255))
+        // check if first or last byte is OKAY
+        if (recived_buffer[0] == 0xFF || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 0xFF))
         {
             waiting_for_okay = false;
             valuesHavBeenFilled = false;
+            bytesRecived--;
             int x = 0;
+
+            // if more value request are queued shift them to position zero to let the main loop fill them with fitting values
             while (request_buffer[x] != IDLE)
             {
                 request_buffer[x] = request_buffer[x + 1];
                 x++;
             }
-            if (bytesRecived == 1)
+
+            // shift the recived buffer one slot to delete the okay and retain the command. Do not do that if okay(0xFF) was at the end of the buffer.
+            if (recived_buffer[0] == 0xFF)
             {
-                bytesRecived = 0;
-            }
-            else
-            {
-                bytesRecived--;
-                for (int i = 0; i < PROTOCOL_LENGTH; i++)
+                for (int i = 0; i != PROTOCOL_LENGTH; i++)
                 {
                     recived_buffer[1] = recived_buffer[i + 1];
                 }
             }
         }
-        else if(recived_buffer[0] == 245 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 245))
+        else if (recived_buffer[0] == 245 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 245))
         {
             sendBuffer();
+        }
+    }
+
+    // if notOkay(0xFE) was recived without waiting for an okay just delete that byte
+    if (bytesRecived > 0 && recived_buffer[0] == 0xFE)
+    {
+        bytesRecived--;
+        for (int i = 0; i != PROTOCOL_LENGTH; i++)
+        {
+            recived_buffer[1] = recived_buffer[i + 1];
         }
     }
 
@@ -55,7 +66,6 @@ void communication::execute()
     }
 
     // reading new command
-    // if (!waiting_for_okay && Serial.available() == PROTOCOL_LENGTH && !recived_value.is_available)
     if (bytesRecived == PROTOCOL_LENGTH && !recived_value.is_available)
     {
         readNewCommand();
@@ -90,23 +100,22 @@ void communication::execute()
         millisSinceBufferWasEmpty = millis();
     }
 
-    // TOBI you might comment to stop spam
-    // send status when communication is not busy
+#ifdef PUSH_STATUS_WHEN_COM_IN_IDLE
     if (bytesRecived == 0)
     {
         if (millis() - millisSinceBufferWasNotEmpty > 1000)
         {
-            addCommandToRequestLine(POSITION);
+            addCommandToRequestLine(IST_POSITION);
             addCommandToRequestLine(HOMING_STATUS);
             addCommandToRequestLine(FPS);
-            millisSinceBufferWasNotEmpty = millis(); //TOBI delete this line to create maximum SPAM
+            millisSinceBufferWasNotEmpty = millis(); // TOBI delete this line to create maximum SPAM
         }
     }
     else
     {
         millisSinceBufferWasNotEmpty = millis();
     }
-    //-----------------------------
+#endif
 }
 
 void communication::acknowledge(ANSWER answer)
@@ -118,12 +127,18 @@ void communication::acknowledge(ANSWER answer)
     switch (answer)
     {
     case OKAY:
-        Serial.write(255);
+        Serial.write(0xFF);
         Serial.flush();
         break;
 
     case NOT_OKAY:
-        Serial.write(254);
+        failedCommands++;
+        delay(20); // wait for possible transmission to end
+        while (Serial.available() != 0)
+        {
+            Serial.read();
+        }
+        Serial.write(0xFE);
         Serial.flush();
         break;
 
@@ -154,12 +169,6 @@ void communication::readNewCommand()
 {
     if (!verifyData())
     {
-        for (int i = 0; i < PROTOCOL_LENGTH; i++)
-        {
-            Serial.write(recived_buffer[i]);
-            Serial.flush();
-        }
-
         acknowledge(NOT_OKAY);
         return;
     }
@@ -210,6 +219,10 @@ void communication::readNewCommand()
     {
         acknowledge(OKAY);
         ringCounter++;
+        if (ringCounter == 40)
+        {
+            ringCounter = 0;
+        }
         if (ringCounter == 0)
         {
             calculateCycleTime();
@@ -236,21 +249,6 @@ void communication::sendBuffer()
         Serial.flush();
     }
     waiting_for_okay = true;
-
-    // DELETE THIS TO STOP IGNORING TOBIS BUGS
-    if (buffer[0] == 4)
-    {
-        waiting_for_okay = false;
-        valuesHavBeenFilled = false;
-        int x = 0;
-        while (request_buffer[x] != IDLE)
-        {
-            request_buffer[x] = request_buffer[x + 1];
-            x++;
-        }
-        delay(500);
-    }
-    //------------------------------------
     millisAtLastSendMessage = millis();
 }
 
@@ -272,6 +270,7 @@ void communication::sendValue(CMD command, unsigned value1, unsigned value2, uns
 void communication::addAllCommandsToRequestLine()
 {
     addCommandToRequestLine(POSITION);
+    addCommandToRequestLine(IST_POSITION);
     addCommandToRequestLine(MAX_POSITION);
     addCommandToRequestLine(HOMING_OFFSET);
     addCommandToRequestLine(ACCELLERATION);
@@ -329,7 +328,7 @@ void communication::calculateCycleTime()
     {
         return;
     }
-    fps = (unsigned)(256.0 / (timeFor256Commands / 1000.0));
+    fps = (unsigned)(40.0 / (timeFor256Commands / 1000.0));
     addCommandToRequestLine(FPS);
 }
 

@@ -1,7 +1,9 @@
 #ifndef AXIS_H
 #define AXIS_H
 #define MAX_AMOUNT_OF_AXIS 10
+
 #include "Arduino.h"
+#include "configuration.h"
 enum TRACKING_TYPE
 {
     _MC_FOCUS_ON_TRACKING,
@@ -67,7 +69,11 @@ private:
     bool softwareLimitsEnabled = true;
     volatile bool movingVelocity = false;
     volatile bool homingActive = false;
+#ifdef NO_HARDWARE
+    volatile bool AxisIsHomed = true;
+#else
     volatile bool AxisIsHomed = false;
+#endif
     volatile homingStep homingStep = waitForAxisToStop;
     static bool SteppingIsEnabled;
     unsigned long EEPROMAdress;
@@ -75,6 +81,8 @@ private:
     unsigned short ErrorID = 0;
     volatile bool AxisHasError = false;
     static bool InterruptHasBeenSet;
+    volatile unsigned long positionStartDecelerating;
+    unsigned maximumTablePosition;
 
     void calculateSpeedPeriodTable();
     void writeTable();
@@ -95,12 +103,15 @@ private:
     void commandFinished();
     void moveRelativeInternal(unsigned long, bool);
     void moveVelocityInternal(unsigned long, bool);
+    void moveAbsoluteInternal(unsigned long);
     unsigned long getSpeed();
     bool AxisIsReady();
     static void setInterrupt();
+    void loadDefaultValues();
 
     void saveData();
     void readData();
+    void verifyData();
     void writeEEPROM(unsigned long);
     void writeEEPROM(unsigned int);
     void readEEPROM(unsigned long &);
@@ -108,27 +119,22 @@ private:
 
 public:
     Axis(int Pin_Step, int Pin_Direction, int Pin_Enable, int Pin_Endstop, const int Pin_Trouble, TRACKING_TYPE trackingType);
-    volatile unsigned long positionStartDecelerating;
+
+    // public variable to access from Interrupt
     static unsigned durationSinceLastInterrupt;
     static unsigned TimerPeriod;
     static unsigned AxisCounter;
     static void (*ExecutePointer[MAX_AMOUNT_OF_AXIS])();
-    unsigned maximumTablePosition;
-    static unsigned CyclesUsedForInterrupt;
     static volatile bool analyzeWorkload;
     static volatile float workload;
 
-    void moveAbsoluteInternal(unsigned long);
+    void disableSoftwareLimits();
+    static void disableStepping();
 
+    static void enableStepping();
+    void enableSoftwareLimits();
     void execute();
-    void lock();
-    void unlock();
-    void moveAbsolute(unsigned long);
-    void moveAbsoluteSteps(unsigned long);
-    void moveRelative(unsigned long, bool);
-    void moveVelocity(unsigned long, bool);
-    void stop();
-    void home();
+
     unsigned long getIstpositon();
     unsigned long getSollpositon();
     unsigned long getHomingOffset();
@@ -136,34 +142,45 @@ public:
     unsigned long getHomingSpeed();
     unsigned long getHomingAcceleration();
     unsigned long getMaxSpeed();
-
+    unsigned getErrorID();
     bool getDirection();
+    static float getWorkload();
+    unsigned long getMaxPosition();
+
+    bool hasError();
+    void home();
+
     bool isRunningMaxSpeed();
     bool isActive();
     bool isHomed();
     bool isDeccelerating();
-    static bool steppingIsEnabled();
-    static float getWorkload();
-    static void disableStepping();
-    static void enableStepping();
+
+    void lock();
+
+    void moveAbsolute(unsigned long);
+    void moveAbsoluteSteps(unsigned long);
+    void moveRelative(unsigned long, bool);
+    void moveVelocity(unsigned long, bool);
+
     void printIstPosition();
     void printSollPosition();
     void printMaxPosition();
     void printPositionDeccelerating();
     void printTimerPeriod();
+
+    void resetAxis();
+
     void setAcceleration(unsigned long);
     void setSpeed(unsigned long);
     void setMaxPosition(unsigned long);
     void setHomingOffset(unsigned long);
     void setHomingSpeed(unsigned long);
     void setHomingAcceleration(unsigned long);
-    unsigned long getMaxPosition();
-    void enableSoftwareLimits();
-    void disableSoftwareLimits();
     void setStepsPerMillimeter(unsigned long);
-    bool hasError();
-    void resetAxis();
-    unsigned getErrorID();
+    void stop();
+    static bool steppingIsEnabled();
+
+    void unlock();
 };
 
 #endif

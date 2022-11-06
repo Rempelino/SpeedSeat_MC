@@ -4,6 +4,7 @@
 #include "Axis.h"
 #include "communication.h"
 #include "Beeping.h"
+#include "compileChecker.h"
 
 const unsigned long intervall = 20;
 const unsigned long intervall1 = 100;
@@ -45,15 +46,18 @@ void setup()
   digitalWrite(PIN_BEEPER, LOW);
   // delay(100);
 
-  /*while (!digitalRead(PIN_ENABLE) & !NO_HARDWARE & !ALLOW_MOVEMENT_AFTER_BOOTUP)
+#ifndef NO_HARDWARE
+#ifndef ALLOW_MOVEMENT_AFTER_BOOTUP
+  while (!digitalRead(PIN_ENABLE))
   {
     beep.doubleBeep();
   }
-
-  while (digitalRead(PIN_ENABLE) & !NO_HARDWARE)
+#endif
+  while (digitalRead(PIN_ENABLE))
   {
     delay(100);
-  }*/
+  }
+#endif
   timeStamp = millis();
   timeStamp1 = millis();
 }
@@ -61,11 +65,9 @@ void setup()
 //--------------------------------------LOOP-------------------------------------------------
 void loop()
 {
-  while (ANALYZE_MOTION_CERNEL)
-  {
-    analyzeMotionCernel();
-  }
-
+#ifdef ANALYZE_MOTION_CERNEL
+  analyzeMotionCernel();
+#else
   com.execute();
 
   if (com.getRequestedValue() != IDLE)
@@ -78,12 +80,9 @@ void loop()
     readNewCommand();
   }
 
-  if (NO_HARDWARE)
-  {
-    Axis::enableStepping();
-    return;
-  }
-  // END HERE IF NO HARDWARE --------------------------------
+#ifdef NO_HARDWARE
+  Axis::enableStepping();
+#else
 
   if (!Z_Axis.isHomed())
   {
@@ -147,19 +146,23 @@ void loop()
     Axis::disableStepping();
     beep.doubleBeep();
   }
+#endif
+#endif
 }
+
+
 // END OF LOOP--------------------------------------------
 
 void writeRequestedValue()
 {
-  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
   switch (com.getRequestedValue())
   {
+  case IST_POSITION:
   case POSITION:
     com.fillValueBuffer(
-        X_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / X_Axis.getMaxPosition(),
-        Y_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Y_Axis.getMaxPosition(),
-        Z_Axis.getIstpositon() * STEPS_PER_MM * 0xFFFF / Z_Axis.getMaxPosition());
+        X_Axis.getIstpositon() * 0xFFFF / X_Axis.getMaxPosition(),
+        Y_Axis.getIstpositon() * 0xFFFF / Y_Axis.getMaxPosition(),
+        Z_Axis.getIstpositon() * 0xFFFF / Z_Axis.getMaxPosition());
     break;
 
   case MAX_POSITION:
@@ -191,7 +194,7 @@ void writeRequestedValue()
     break;
 
   case FPS:
-    com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, 0);
+    com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, com.failedCommands);
     break;
 
   case INIT_SUCCESSFUL:
@@ -205,20 +208,12 @@ void writeRequestedValue()
 
 void readNewCommand()
 {
-  if (Z_Axis.isHomed())
-  {
-    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
-  }
-  else
-  {
-    digitalWrite(LED_BUILTIN, LOW);
-  }
   switch (com.recived_value.command)
   {
   case POSITION:
-    X_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[0]) * X_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
-    Y_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[1]) * Y_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
-    Z_Axis.moveAbsoluteInternal((unsigned long)(com.recived_value.as_int16[2]) * Z_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    X_Axis.moveAbsoluteSteps((unsigned long)(com.recived_value.as_int16[0]) * X_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    Y_Axis.moveAbsoluteSteps((unsigned long)(com.recived_value.as_int16[1]) * Y_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
+    Z_Axis.moveAbsoluteSteps((unsigned long)(com.recived_value.as_int16[2]) * Z_Axis.getMaxPosition() * STEPS_PER_MM / 0xFFFFul);
     break;
 
   case MAX_POSITION:
@@ -279,10 +274,13 @@ void readNewCommand()
     break;
   }
   com.recived_value.is_available = false;
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
 }
 
+#ifdef ANALYZE_MOTION_CERNEL
 void analyzeMotionCernel()
 {
+  Axis::enableStepping();
   unsigned long myMillis = millis();
 
   if (myMillis - timeStamp > intervall)
@@ -334,5 +332,5 @@ void analyzeMotionCernel()
       Serial.read();
     }
   }
-  return;
 }
+#endif

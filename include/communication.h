@@ -34,6 +34,7 @@ enum CMD
     HOMING_SPEED = 9,
     HOMING_ACCELERATION = 10,
     FPS = 11,
+    IST_POSITION = 12,
 
     IDLE = 999
 };
@@ -67,6 +68,7 @@ class communication
     bool valuesHavBeenFilled = false;
     unsigned valuesToSend[3];
     CMD request_buffer[REQUEST_BUFFER_LENGTH];
+
     bool verifyData();
     void readNewCommand();
     void sendBuffer();
@@ -84,5 +86,6 @@ public:
     unsigned fps;
     CMD getRequestedValue();
     AvailableInfos recived_value;
+    unsigned failedCommands = 0;
 };
 #endif

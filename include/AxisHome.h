@@ -1,4 +1,26 @@
 #include "Axis.h"
+
+void Axis::home()
+{
+#ifdef NO_HARDWARE
+    return;
+#else
+
+    initializeHardware();
+    if (!SteppingIsEnabled)
+    {
+        return;
+    }
+    if (homingActive)
+    {
+        return;
+    }
+    AxisIsHomed = false;
+    homingStep = waitForAxisToStop;
+    homingActive = true;
+#endif
+}
+
 void Axis::executeHoming()
 {
     switch (homingStep)
