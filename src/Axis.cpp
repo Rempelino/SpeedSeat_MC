@@ -6,6 +6,12 @@
 #include "AxisEEPROM.h"
 #include "configuration.h"
 
+#ifdef AUTO_SAVE
+#define SAVE_DATA saveData();
+#else
+#define SAVE_DATA // NOTHING
+#endif
+
 unsigned Axis::AxisCounter = 0;
 unsigned Axis::durationSinceLastInterrupt = 0;
 unsigned Axis::TimerPeriod = 0xFFFF;
@@ -192,6 +198,7 @@ void Axis::printPositionDeccelerating()
 
 float Axis::getWorkload()
 {
+    return workload;
     if (!SteppingIsEnabled)
     {
         return 0;
@@ -231,24 +238,29 @@ void Axis::resetAcceleration()
     writeTable();
 }
 
-void Axis::setAcceleration(unsigned long acceleration)
+void Axis::setAcceleration(unsigned long acceleration, PARAMETER_MODE parameterMode = _MC_PERMANENT)
 {
-    this->acceleration = acceleration * stepsPerMillimeter;
-    this->defaultAcceleration = this->acceleration;
-    saveData();
-    writeTable();
+    if (parameterMode == _MC_PERMANENT)
+    {
+        this->acceleration = acceleration * stepsPerMillimeter;
+        this->defaultAcceleration = this->acceleration;
+        SAVE_DATA
+        writeTable();
+    }else{
+        setTempAcceleration(acceleration * stepsPerMillimeter);
+    }
 }
 
 void Axis::setHomingSpeed(unsigned long speed)
 {
     this->speedWhileHoming = speed * stepsPerMillimeter;
-    saveData();
+    SAVE_DATA
 }
 
 void Axis::setHomingAcceleration(unsigned long acceleration)
 {
     this->accelerationWhileHoming = acceleration * stepsPerMillimeter;
-    saveData();
+    SAVE_DATA
 }
 
 void Axis::setTempSpeed(unsigned long speed)
@@ -271,7 +283,7 @@ void Axis::setSpeed(unsigned long maxSpeed)
 {
     this->maxSpeed = maxSpeed * stepsPerMillimeter;
     this->defaulMaxSpeed = this->maxSpeed;
-    saveData();
+    SAVE_DATA
     writeTable();
 }
 
@@ -314,7 +326,7 @@ void Axis::setMaxPosition(unsigned long MaxPosition)
 
         if (isInitialized)
         {
-            saveData();
+            SAVE_DATA
             if (AxisIsHomed)
             {
                 moveAbsoluteInternal(newPosition);
@@ -330,7 +342,7 @@ void Axis::setHomingOffset(unsigned long offset)
     {
         maxPosition = maxPosition + homingOffset - offset;
         homingOffset = offset;
-        saveData();
+        SAVE_DATA
         home();
     }
 }

@@ -35,6 +35,7 @@ enum CMD
     HOMING_ACCELERATION = 10,
     FPS = 11,
     IST_POSITION = 12,
+    SAVE_SETTINGS = 13,
 
     IDLE = 999
 };
@@ -63,7 +64,8 @@ class communication
     unsigned long millisSinceBufferWasEmpty;
     unsigned long millisSinceBufferWasNotEmpty;
     unsigned long cycleTime;
-    uint8_t ringCounter;
+    unsigned commandCounter;
+    unsigned long millisAtLastFPSCalculation = 0;
     bool waiting_for_okay;
     bool valuesHavBeenFilled = false;
     unsigned valuesToSend[3];
@@ -76,7 +78,7 @@ class communication
     void calculateCycleTime();
     void addDataToRecivedBuffer();
     void acknowledge(ANSWER);
-    void sendValue(CMD command, unsigned value1, unsigned value2 ,unsigned value3);
+    void sendValue(CMD command, unsigned value1, unsigned value2, unsigned value3);
 
 public:
     communication();

@@ -34,7 +34,7 @@
             {
                 "groupLabel": "Motor Ist Positions",
                 "id": 12,
-                "readonly": false,
+                "readonly": true,
                 "value1": {
                     "label": "Front-Right-Motor Position",
                     "type": "numeric",
@@ -298,6 +298,15 @@
                     "min": 20,
                     "max": 1500,
                     "default": 0.5
+                }
+            },
+            {
+                "groupLabel": "Save current configuration",
+                "id": 13,
+                "readonly": false,
+                "value1": {
+                    "label": "save",
+                    "type": "action"
                 }
             }
         ]

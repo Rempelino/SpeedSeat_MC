@@ -4,6 +4,16 @@
 // Public Functions
 void Axis::moveAbsolute(unsigned long newPosition)
 {
+    resetAcceleration();
+    if (AxisIsHomed)
+    {
+        moveAbsoluteInternal(newPosition * stepsPerMillimeter);
+    }
+}
+
+void Axis::moveAbsolute(unsigned long newPosition, unsigned long acceleration)
+{
+    setAcceleration(acceleration, _MC_TEMPORARY);
     if (AxisIsHomed)
     {
         moveAbsoluteInternal(newPosition * stepsPerMillimeter);
@@ -12,6 +22,7 @@ void Axis::moveAbsolute(unsigned long newPosition)
 
 void Axis::moveAbsoluteSteps(unsigned long newPosition)
 {
+    resetAcceleration();
     if (AxisIsHomed)
     {
         moveAbsoluteInternal(newPosition);

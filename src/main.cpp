@@ -20,10 +20,11 @@ Beeping beep(PIN_BEEPER, 400, 1000);
 void analyzeMotionCernel();
 void writeRequestedValue();
 void readNewCommand();
-
+void checkReturnToZero();
 void setup()
 {
   Serial.begin(38400);
+
   // Achse initialisieren
   Axis::ExecutePointer[0] = []()
   { X_Axis.execute(); };
@@ -68,6 +69,9 @@ void loop()
 #ifdef ANALYZE_MOTION_CERNEL
   analyzeMotionCernel();
 #else
+#ifdef AUTO_RETURN_TO_ZERO
+  checkReturnToZero();
+#endif
   com.execute();
 
   if (com.getRequestedValue() != IDLE)
@@ -149,7 +153,6 @@ void loop()
 #endif
 #endif
 }
-
 
 // END OF LOOP--------------------------------------------
 
@@ -265,9 +268,12 @@ void readNewCommand()
     {
       Z_Axis.home();
     }
-    Z_Axis.home();
-    X_Axis.home();
-    Y_Axis.home();
+    break;
+
+  case SAVE_SETTINGS:
+    X_Axis.saveData();
+    Y_Axis.saveData();
+    Z_Axis.saveData();
     break;
 
   default:
@@ -330,6 +336,31 @@ void analyzeMotionCernel()
     while (Serial.available() != 0)
     {
       Serial.read();
+    }
+  }
+}
+#endif
+#ifdef AUTO_RETURN_TO_ZERO
+unsigned long millisFPSWasHigh;
+bool gamingActive = false;
+void checkReturnToZero()
+{
+  if (com.fps > 5)
+  {
+    millisFPSWasHigh = millis();
+    if (!gamingActive)
+    {
+      gamingActive = true;
+    }
+  }
+  else
+  {
+    if (gamingActive && millis() - millisFPSWasHigh > 1000)
+    {
+      X_Axis.moveAbsolute(X_Axis.getMaxPosition() / 2, 20);
+      Y_Axis.moveAbsolute(Y_Axis.getMaxPosition() / 2, 20);
+      Z_Axis.moveAbsolute(Z_Axis.getMaxPosition() / 2, 20);
+      gamingActive = false;
     }
   }
 }

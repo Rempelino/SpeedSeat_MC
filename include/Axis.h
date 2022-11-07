@@ -10,6 +10,12 @@ enum TRACKING_TYPE
     _MC_FOCUS_ON_SMOOTHENESS
 };
 
+enum PARAMETER_MODE
+{
+    _MC_PERMANENT,
+    _MC_TEMPORARY
+};
+
 class Axis
 {
 private:
@@ -109,7 +115,6 @@ private:
     static void setInterrupt();
     void loadDefaultValues();
 
-    void saveData();
     void readData();
     void verifyData();
     void writeEEPROM(unsigned long);
@@ -158,6 +163,7 @@ public:
     void lock();
 
     void moveAbsolute(unsigned long);
+    void moveAbsolute(unsigned long, unsigned long);
     void moveAbsoluteSteps(unsigned long);
     void moveRelative(unsigned long, bool);
     void moveVelocity(unsigned long, bool);
@@ -170,7 +176,7 @@ public:
 
     void resetAxis();
 
-    void setAcceleration(unsigned long);
+    void setAcceleration(unsigned long, PARAMETER_MODE parameterMode = _MC_PERMANENT);
     void setSpeed(unsigned long);
     void setMaxPosition(unsigned long);
     void setHomingOffset(unsigned long);
@@ -179,6 +185,7 @@ public:
     void setStepsPerMillimeter(unsigned long);
     void stop();
     static bool steppingIsEnabled();
+    void saveData();
 
     void unlock();
 };

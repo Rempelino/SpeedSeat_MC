@@ -10,11 +10,12 @@ ISR(TIMER3_COMPA_vect)
         (*Axis::ExecutePointer[i])();
     }
 
-    if (Axis::analyzeWorkload)
-    {   
-        Axis::workload = (float)TCNT3/Axis::TimerPeriod;
-        Axis::analyzeWorkload = false;
-    }
+    // if (Axis::analyzeWorkload)
+    // {
+    //     Axis::workload = (float)TCNT3/Axis::TimerPeriod;
+    //     Axis::analyzeWorkload = false;
+    // }
+    Axis::workload = (float)TCNT3 / Axis::TimerPeriod;
 
     OCR3A = Axis::TimerPeriod;
 }

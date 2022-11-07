@@ -39,12 +39,13 @@ void communication::execute()
             {
                 for (int i = 0; i != PROTOCOL_LENGTH; i++)
                 {
-                    recived_buffer[1] = recived_buffer[i + 1];
+                    recived_buffer[i] = recived_buffer[i + 1];
                 }
             }
         }
-        else if (recived_buffer[0] == 245 || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 245))
+        else if (recived_buffer[0] == 0xFE || (bytesRecived == PROTOCOL_LENGTH + 1 && recived_buffer[PROTOCOL_LENGTH] == 0xFE))
         {
+            failedCommands++;
             sendBuffer();
         }
     }
@@ -52,10 +53,11 @@ void communication::execute()
     // if notOkay(0xFE) was recived without waiting for an okay just delete that byte
     if (bytesRecived > 0 && recived_buffer[0] == 0xFE)
     {
+        failedCommands++;
         bytesRecived--;
         for (int i = 0; i != PROTOCOL_LENGTH; i++)
         {
-            recived_buffer[1] = recived_buffer[i + 1];
+            recived_buffer[i] = recived_buffer[i + 1];
         }
     }
 
@@ -103,12 +105,12 @@ void communication::execute()
 #ifdef PUSH_STATUS_WHEN_COM_IN_IDLE
     if (bytesRecived == 0)
     {
-        if (millis() - millisSinceBufferWasNotEmpty > 1000)
+        if (millis() - millisSinceBufferWasNotEmpty > 0)
         {
             addCommandToRequestLine(IST_POSITION);
             addCommandToRequestLine(HOMING_STATUS);
             addCommandToRequestLine(FPS);
-            millisSinceBufferWasNotEmpty = millis(); // TOBI delete this line to create maximum SPAM
+            // millisSinceBufferWasNotEmpty = millis(); // TOBI delete this line to create maximum SPAM
         }
     }
     else
@@ -116,6 +118,7 @@ void communication::execute()
         millisSinceBufferWasNotEmpty = millis();
     }
 #endif
+    calculateCycleTime();
 }
 
 void communication::acknowledge(ANSWER answer)
@@ -140,6 +143,15 @@ void communication::acknowledge(ANSWER answer)
         }
         Serial.write(0xFE);
         Serial.flush();
+        /*for (int i = 0; i != PROTOCOL_LENGTH; i++)
+        {
+            Serial.write(recived_buffer[i]);
+            Serial.flush();
+        }
+
+        while (1)
+        {
+        }*/
         break;
 
     default:
@@ -187,6 +199,7 @@ void communication::readNewCommand()
     case NEW_HOMING:
     case HOMING_SPEED:
     case HOMING_ACCELERATION:
+    case SAVE_SETTINGS:
         if (reading)
         {
             addCommandToRequestLine(command);
@@ -218,15 +231,7 @@ void communication::readNewCommand()
     if (successfulExecuted)
     {
         acknowledge(OKAY);
-        ringCounter++;
-        if (ringCounter == 40)
-        {
-            ringCounter = 0;
-        }
-        if (ringCounter == 0)
-        {
-            calculateCycleTime();
-        }
+        commandCounter++;
     }
     else
     {
@@ -321,15 +326,14 @@ void communication::fillValueBuffer(unsigned Value1, unsigned Value2, unsigned V
 
 void communication::calculateCycleTime()
 {
-    double timeFor256Commands = millis() - cycleTime;
-    cycleTime = millis();
-
-    if (timeFor256Commands == 0)
+    const unsigned long calculationIntervall = 1000;
+    if (millis() - millisAtLastFPSCalculation > calculationIntervall)
     {
-        return;
+        millisAtLastFPSCalculation += calculationIntervall;
+        fps = commandCounter;
+        commandCounter = 0;
+        addCommandToRequestLine(FPS);
     }
-    fps = (unsigned)(40.0 / (timeFor256Commands / 1000.0));
-    addCommandToRequestLine(FPS);
 }
 
 void communication::addDataToRecivedBuffer()
@@ -339,6 +343,11 @@ void communication::addDataToRecivedBuffer()
         acknowledge(NOT_OKAY);
         return;
     }
-    recived_buffer[bytesRecived] = Serial.read();
-    bytesRecived++;
+
+    unsigned short c = Serial.read();
+    if (c <= 0xFF)
+    {
+        recived_buffer[bytesRecived] = c;
+        bytesRecived++;
+    }
 }
