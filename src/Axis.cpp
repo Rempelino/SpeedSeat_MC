@@ -238,7 +238,7 @@ void Axis::resetAcceleration()
     writeTable();
 }
 
-void Axis::setAcceleration(unsigned long acceleration, PARAMETER_MODE parameterMode = _MC_PERMANENT)
+void Axis::setAcceleration(unsigned long acceleration, PARAMETER_MODE parameterMode)
 {
     if (parameterMode == _MC_PERMANENT)
     {
