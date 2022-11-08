@@ -102,22 +102,16 @@ void communication::execute()
         millisSinceBufferWasEmpty = millis();
     }
 
-#ifdef PUSH_STATUS_WHEN_COM_IN_IDLE
-    if (bytesRecived == 0)
+    if (bytesRecived == 0 && sendState)
     {
-        if (millis() - millisSinceBufferWasNotEmpty > 0)
+        if (millis() - millisLastStateUpdate > stateUpdateIntervall)
         {
             addCommandToRequestLine(IST_POSITION);
             addCommandToRequestLine(HOMING_STATUS);
-            addCommandToRequestLine(FPS);
-            // millisSinceBufferWasNotEmpty = millis(); // TOBI delete this line to create maximum SPAM
+            addCommandToRequestLine(INFORMATION);
+            millisLastStateUpdate = millis();
         }
     }
-    else
-    {
-        millisSinceBufferWasNotEmpty = millis();
-    }
-#endif
     calculateCycleTime();
 }
 
@@ -126,7 +120,6 @@ void communication::acknowledge(ANSWER answer)
 
     bytesRecived = 0;
     millisSinceBufferWasEmpty = millis();
-    millisSinceBufferWasNotEmpty = millis();
     switch (answer)
     {
     case OKAY:
@@ -206,12 +199,12 @@ void communication::readNewCommand()
         }
         else
         {
-            recived_value.as_int16[0] = recived_buffer[1] * 256 + recived_buffer[2];
-            recived_value.as_int16[1] = recived_buffer[3] * 256 + recived_buffer[4];
-            recived_value.as_int16[2] = recived_buffer[5] * 256 + recived_buffer[6];
-            recived_value.as_bool[0] = (bool)(recived_buffer)[1];
-            recived_value.as_bool[1] = (bool)(recived_buffer)[3];
-            recived_value.as_bool[2] = (bool)(recived_buffer)[5];
+            recived_value.as_int16[0] = (recived_buffer[1] << 8) | recived_buffer[2];
+            recived_value.as_int16[1] = (recived_buffer[3] << 8) | recived_buffer[4];
+            recived_value.as_int16[2] = (recived_buffer[5] << 8) | recived_buffer[6];
+            recived_value.as_bool[0] = (bool)(recived_buffer)[2];
+            recived_value.as_bool[1] = (bool)(recived_buffer)[4];
+            recived_value.as_bool[2] = (bool)(recived_buffer)[6];
             recived_value.command = command;
             recived_value.is_available = true;
         }
@@ -220,6 +213,12 @@ void communication::readNewCommand()
 
     case INIT_REQUEST:
         addAllCommandsToRequestLine();
+        successfulExecuted = true;
+        break;
+
+    case STATE_UPDATE_INTERVALL:
+        stateUpdateIntervall = recived_buffer[1] * 256 + recived_buffer[2];
+        sendState = (bool)(recived_buffer)[4];
         successfulExecuted = true;
         break;
 
@@ -283,7 +282,7 @@ void communication::addAllCommandsToRequestLine()
     addCommandToRequestLine(HOMING_STATUS);
     addCommandToRequestLine(HOMING_SPEED);
     addCommandToRequestLine(HOMING_ACCELERATION);
-    addCommandToRequestLine(FPS);
+    addCommandToRequestLine(INFORMATION);
     addCommandToRequestLine(INIT_SUCCESSFUL);
 }
 
@@ -332,7 +331,6 @@ void communication::calculateCycleTime()
         millisAtLastFPSCalculation += calculationIntervall;
         fps = commandCounter;
         commandCounter = 0;
-        addCommandToRequestLine(FPS);
     }
 }
 

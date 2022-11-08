@@ -196,7 +196,7 @@ void writeRequestedValue()
     com.fillValueBuffer(X_Axis.getHomingAcceleration(), Y_Axis.getHomingAcceleration(), Z_Axis.getHomingAcceleration());
     break;
 
-  case FPS:
+  case INFORMATION:
     com.fillValueBuffer(com.fps, Axis::getWorkload() * 100, com.failedCommands);
     break;
 

@@ -1,6 +1,8 @@
 {
     "config": {
         "connectionResponseTimeoutMs": 3000,
+        "commandSendRetryIntervalMs": 1000,
+        "uiUpdateIntervalMs": 100,
         "commands": [
             {
                 "groupLabel": "Motor-Comand-Positions",
@@ -307,6 +309,24 @@
                 "value1": {
                     "label": "save",
                     "type": "action"
+                }
+            },
+            {
+                "groupLabel": "State update intervall",
+                "id": 14,
+                "readonly": false,
+                "value1": {
+                    "label": "intervall",
+                    "type": "numeric",
+                    "scaleToFullRange": false,
+                    "min": 0,
+                    "max": 10000,
+                    "default": 1000
+                },
+                "value2": {
+                    "label": "send",
+                    "type": "boolean",
+                    "default": 1
                 }
             }
         ]
