@@ -33,9 +33,10 @@ enum CMD
     NEW_HOMING = 8,
     HOMING_SPEED = 9,
     HOMING_ACCELERATION = 10,
-    FPS = 11,
+    INFORMATION = 11,
     IST_POSITION = 12,
     SAVE_SETTINGS = 13,
+    STATE_UPDATE_INTERVALL = 14,
 
     IDLE = 999
 };
@@ -62,7 +63,7 @@ class communication
     int bytesRecived;
     unsigned long millisAtLastSendMessage;
     unsigned long millisSinceBufferWasEmpty;
-    unsigned long millisSinceBufferWasNotEmpty;
+    unsigned long millisLastStateUpdate;
     unsigned long cycleTime;
     unsigned commandCounter;
     unsigned long millisAtLastFPSCalculation = 0;
@@ -70,6 +71,8 @@ class communication
     bool valuesHavBeenFilled = false;
     unsigned valuesToSend[3];
     CMD request_buffer[REQUEST_BUFFER_LENGTH];
+    unsigned stateUpdateIntervall = 1000;
+    bool sendState = true;
 
     bool verifyData();
     void readNewCommand();
