@@ -193,6 +193,7 @@ void communication::readNewCommand()
     case HOMING_SPEED:
     case HOMING_ACCELERATION:
     case SAVE_SETTINGS:
+    case RESET_EEPROM:
         if (reading)
         {
             addCommandToRequestLine(command);

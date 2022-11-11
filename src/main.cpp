@@ -1,5 +1,6 @@
 
 #include "Arduino.h"
+#include "EEPROM.h"
 #include "configuration.h"
 #include "Axis.h"
 #include "communication.h"
@@ -274,6 +275,16 @@ void readNewCommand()
     X_Axis.saveData();
     Y_Axis.saveData();
     Z_Axis.saveData();
+    break;
+
+  case RESET_EEPROM:
+    for (int i = 0; i < EEPROM.length(); i++)
+    {
+      EEPROM.write(i, 0xFF);
+    }
+    while (1)
+    {
+    }
     break;
 
   default:

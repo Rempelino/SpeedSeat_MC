@@ -37,6 +37,7 @@ enum CMD
     IST_POSITION = 12,
     SAVE_SETTINGS = 13,
     STATE_UPDATE_INTERVALL = 14,
+    RESET_EEPROM = 0x42,
 
     IDLE = 999
 };
