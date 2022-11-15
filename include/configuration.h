@@ -3,7 +3,7 @@
 
 #define STEPS_PER_MM 40UL
 
-#define NO_HARDWARE
+//#define NO_HARDWARE
 //#define ANALYZE_MOTION_CERNEL
 //#define ALLOW_MOVEMENT_AFTER_BOOTUP
 #define USE_EEPROM

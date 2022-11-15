@@ -42,11 +42,10 @@ void setup()
   pinMode(PIN_ENABLE, INPUT_PULLUP);
   pinMode(PIN_BEEPER, OUTPUT);
 
-  // TOBI die Zeiten einkommentieren sollte nich für Timeout sorgen
   digitalWrite(PIN_BEEPER, HIGH);
-  // delay(500);
+  delay(500);
   digitalWrite(PIN_BEEPER, LOW);
-  // delay(100);
+  delay(100);
 
 #ifndef NO_HARDWARE
 #ifndef ALLOW_MOVEMENT_AFTER_BOOTUP
@@ -55,10 +54,6 @@ void setup()
     beep.doubleBeep();
   }
 #endif
-  while (digitalRead(PIN_ENABLE))
-  {
-    delay(100);
-  }
 #endif
   timeStamp = millis();
   timeStamp1 = millis();
@@ -67,6 +62,7 @@ void setup()
 //--------------------------------------LOOP-------------------------------------------------
 void loop()
 {
+  //digitalWrite(PIN_BEEPER, !digitalRead(PIN_BEEPER));
 #ifdef ANALYZE_MOTION_CERNEL
   analyzeMotionCernel();
 #else
@@ -278,7 +274,7 @@ void readNewCommand()
     break;
 
   case RESET_EEPROM:
-    for (int i = 0; i < EEPROM.length(); i++)
+    for (unsigned i = 0; i < EEPROM.length(); i++)
     {
       EEPROM.write(i, 0xFF);
     }
