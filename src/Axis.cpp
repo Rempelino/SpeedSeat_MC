@@ -426,3 +426,25 @@ bool Axis::AxisIsReady()
     }
     return true;
 }
+
+bool Axis::digitalReadAverage(int pin, int averageingNumber)
+{
+    //read a digital pin and return the average result to prevent action due to noise
+    int y = 0;
+    int x = 0;
+    for (x = 0; x < averageingNumber; x++)
+    {
+        if (digitalRead(pin))
+        {
+            y++;
+        }
+    }
+    if (y > averageingNumber / 2)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}

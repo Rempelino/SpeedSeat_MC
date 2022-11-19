@@ -135,6 +135,7 @@ public:
 
     void disableSoftwareLimits();
     static void disableStepping();
+    static bool digitalReadAverage(int, int averageingNumber = 10);
 
     static void enableStepping();
     void enableSoftwareLimits();

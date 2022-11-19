@@ -242,6 +242,8 @@ void Axis::stop()
 {
     if (active)
     {
+        resetAcceleration();
+        resetSpeed();
         movingVelocity = false;
         stopping = true;
         decelerating = true;
