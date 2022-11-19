@@ -49,7 +49,7 @@ void setup()
 
 #ifndef NO_HARDWARE
 #ifndef ALLOW_MOVEMENT_AFTER_BOOTUP
-  while (!digitalRead(PIN_ENABLE))
+  while (!Axis::digitalReadAverage(PIN_ENABLE))
   {
     beep.doubleBeep();
   }
@@ -62,7 +62,7 @@ void setup()
 //--------------------------------------LOOP-------------------------------------------------
 void loop()
 {
-  //digitalWrite(PIN_BEEPER, !digitalRead(PIN_BEEPER));
+  // digitalWrite(PIN_BEEPER, !digitalRead(PIN_BEEPER));
 #ifdef ANALYZE_MOTION_CERNEL
   analyzeMotionCernel();
 #else
@@ -116,7 +116,7 @@ void loop()
     {
       beep.beep(Z_Axis.getErrorID() + 20);
     }
-    if (digitalRead(PIN_ENABLE))
+    if (Axis::digitalReadAverage(PIN_ENABLE))
     {
       X_Axis.resetAxis();
       Y_Axis.resetAxis();
@@ -126,26 +126,32 @@ void loop()
   else
   {
     beep.kill();
-    if (!digitalRead(PIN_ENABLE) && !Axis::steppingIsEnabled())
+    if (!Axis::steppingIsEnabled())
     {
-      beep.doubleBeep();
-      X_Axis.lock();
-      Y_Axis.lock();
-      Z_Axis.lock();
-      Axis::enableStepping();
+      if (!Axis::digitalReadAverage(PIN_ENABLE))
+      {
+        beep.doubleBeep();
+        X_Axis.lock();
+        Y_Axis.lock();
+        Z_Axis.lock();
+        Axis::enableStepping();
+      }
     }
   }
 
   if (digitalRead(PIN_ENABLE) && Axis::steppingIsEnabled())
   {
-    while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
+    if (Axis::digitalReadAverage(PIN_ENABLE))
     {
-      X_Axis.stop();
-      Y_Axis.stop();
-      Z_Axis.stop();
+      while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
+      {
+        X_Axis.stop();
+        Y_Axis.stop();
+        Z_Axis.stop();
+      }
+      Axis::disableStepping();
+      beep.doubleBeep();
     }
-    Axis::disableStepping();
-    beep.doubleBeep();
   }
 #endif
 #endif

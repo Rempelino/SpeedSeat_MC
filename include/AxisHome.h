@@ -39,7 +39,7 @@ void Axis::executeHoming()
         break;
 
     case clearEndstop:
-        if (!digitalRead(Pin_Endstop))
+        if (!digitalReadAverage(Pin_Endstop))
         {
             if (!active)
             {
@@ -56,7 +56,7 @@ void Axis::executeHoming()
     case driveToEndstop:
         if (!stopping)
         {
-            if (!digitalRead(Pin_Endstop))
+            if (!digitalReadAverage(Pin_Endstop))
             {
                 stop();
                 homingStep = moveFromEndstopAfterHoming;
