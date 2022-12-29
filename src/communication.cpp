@@ -136,15 +136,6 @@ void communication::acknowledge(ANSWER answer)
         }
         Serial.write(0xFE);
         Serial.flush();
-        /*for (int i = 0; i != PROTOCOL_LENGTH; i++)
-        {
-            Serial.write(recived_buffer[i]);
-            Serial.flush();
-        }
-
-        while (1)
-        {
-        }*/
         break;
 
     default:
@@ -285,6 +276,7 @@ void communication::addAllCommandsToRequestLine()
     addCommandToRequestLine(HOMING_ACCELERATION);
     addCommandToRequestLine(INFORMATION);
     addCommandToRequestLine(INIT_SUCCESSFUL);
+    addCommandToRequestLine(STATE_UPDATE_INTERVALL);
 }
 
 void communication::addCommandToRequestLine(CMD command)

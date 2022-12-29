@@ -72,8 +72,6 @@ class communication
     bool valuesHavBeenFilled = false;
     unsigned valuesToSend[3];
     CMD request_buffer[REQUEST_BUFFER_LENGTH];
-    unsigned stateUpdateIntervall = 1000;
-    bool sendState = true;
 
     bool verifyData();
     void readNewCommand();
@@ -93,5 +91,7 @@ public:
     CMD getRequestedValue();
     AvailableInfos recived_value;
     unsigned failedCommands = 0;
+    unsigned stateUpdateIntervall = 1000;
+    bool sendState = true;
 };
 #endif

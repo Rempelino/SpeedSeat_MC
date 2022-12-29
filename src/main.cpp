@@ -207,6 +207,10 @@ void writeRequestedValue()
     com.fillValueBuffer(0, 0, 0);
     break;
 
+  case STATE_UPDATE_INTERVALL:
+    com.fillValueBuffer(com.stateUpdateIntervall, com.sendState, 0);
+    break;
+
   default:
     break;
   }
@@ -258,6 +262,7 @@ void readNewCommand()
     Y_Axis.setHomingAcceleration(com.recived_value.as_int16[1]);
     Z_Axis.setHomingAcceleration(com.recived_value.as_int16[2]);
     break;
+
   case NEW_HOMING:
     if (com.recived_value.as_bool[0])
     {
@@ -370,9 +375,9 @@ void checkReturnToZero()
   {
     if (gamingActive && millis() - millisFPSWasHigh > 1000)
     {
-      X_Axis.moveAbsolute(X_Axis.getMaxPosition() / 2, 20);
-      Y_Axis.moveAbsolute(Y_Axis.getMaxPosition() / 2, 20);
-      Z_Axis.moveAbsolute(Z_Axis.getMaxPosition() / 2, 20);
+      X_Axis.moveAbsolute(X_Axis.getMaxPosition(), 40);
+      Y_Axis.moveAbsolute(Y_Axis.getMaxPosition(), 40);
+      Z_Axis.moveAbsolute(Z_Axis.getMaxPosition(), 40);
       gamingActive = false;
     }
   }
