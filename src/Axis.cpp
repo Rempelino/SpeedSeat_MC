@@ -297,6 +297,7 @@ void Axis::unlock()
 {
     digitalWrite(Pin_Enable, HIGH);
     active = false;
+    stopping = false;
     AxisIsHomed = false;
     AxisIsLocked = false;
 }
