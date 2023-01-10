@@ -12,6 +12,9 @@
 #include "pins.h"
 #endif
 
+#define MOVEMENT_NOT_ALLOWED (Axis::digitalReadAverage(PIN_ENABLE))
+#define MOVEMENT_ALLOWED (!Axis::digitalReadAverage(PIN_ENABLE))
+
 
 
 

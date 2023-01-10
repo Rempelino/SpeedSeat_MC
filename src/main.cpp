@@ -128,7 +128,7 @@ void loop()
     beep.kill();
     if (!Axis::steppingIsEnabled())
     {
-      if (!Axis::digitalReadAverage(PIN_ENABLE))
+      if MOVEMENT_ALLOWED
       {
         beep.doubleBeep();
         X_Axis.lock();
@@ -141,14 +141,14 @@ void loop()
 
   if (digitalRead(PIN_ENABLE) && Axis::steppingIsEnabled())
   {
-    if (Axis::digitalReadAverage(PIN_ENABLE))
+    if MOVEMENT_NOT_ALLOWED
     {
-      while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
+      /*while (X_Axis.isActive() || Y_Axis.isActive() || Z_Axis.isActive())
       {
         X_Axis.stop();
         Y_Axis.stop();
         Z_Axis.stop();
-      }
+      }*/
       Axis::disableStepping();
       beep.doubleBeep();
     }
